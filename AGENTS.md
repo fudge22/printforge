@@ -1,51 +1,63 @@
 PrintForge Agent Instructions
-Project Purpose
+Purpose
 
-PrintForge helps a small 3D-printing seller evaluate the journey from a digital model to a commercially viable physical product.
+PrintForge manages the journey from a 3D model to a commercially viable
+physical product.
 
-The application should help answer:
+The central product question is:
 
 Should I sell this product, and why?
 
-PrintForge considers areas such as:
+When making changes, prefer the simplest implementation that correctly solves
+the current PrintForge requirement.
 
-Model and source provenance
-Recorded commercial-use rights
-Third-party intellectual property review
-Manufacturing configuration
-Plates and print time
-Filament usage and waste
-Components and consumables
-Post-processing labor
-Packaging and applicable fees
-Planned selling price
-Comparable asking prices
-Cash contribution and profitability
-Printer utilization
-Commercial readiness
+Do not introduce abstractions, dependencies, packages, or infrastructure only
+because they may be useful later.
 
-PrintForge is not intended to become a full accounting, e-commerce, legal-compliance, or manufacturing ERP system.
+Authoritative Project Documentation
 
-Read Project Documentation First
-
-Before making significant architectural, domain, or data-model changes, review the relevant documentation in docs/.
-
-Important documents include:
+Before changing business rules, domain entities, persistence, architecture, or
+V1 scope, consult the relevant source below.
 
 docs/requirements.md
+Product goals.
+V1 behavior.
+Economics.
+Readiness requirements.
+V1/V2 scope boundaries.
 docs/domain-model.md
+Canonical domain terminology.
+Entities and relationships.
+Domain ownership.
+Frozen V1 modeling rules and invariants.
+docs/database-schema.md
+Persistence model.
+Planned tables and relationships.
+Derived-versus-persisted data rules.
+Referential-integrity expectations.
 docs/architecture.md
+Application architecture.
+Package responsibilities.
+Data flow.
+Testing strategy.
+Dependency and abstraction guidance.
 docs/decisions.md
+Accepted architectural and technical decisions.
+Rationale for major technology choices.
 
-Treat these documents as the authoritative description of the current V1 product and architecture.
+These documents are complementary rather than interchangeable.
 
-Do not silently contradict documented decisions.
+Do not redefine a business rule based solely on a database representation or
+implementation convenience.
 
-If an implementation appears to require changing a documented decision, identify the conflict and explain the tradeoff before making the architectural change.
+If code, assumptions, or a requested change conflicts with these documents, do
+not silently reinterpret the documented design. Surface the conflict before
+changing the documented rule.
 
-Current Technology Stack
+Technology Stack
 
-PrintForge currently uses the following technical direction:
+Use the established PrintForge stack unless an accepted architectural change
+says otherwise:
 
 TypeScript
 React
@@ -58,419 +70,246 @@ pnpm workspaces
 Vitest
 Playwright
 GitHub Actions
-Git / GitHub
 
-Do not replace these technologies or introduce competing frameworks without a concrete requirement and explicit approval.
+Do not replace or add major frameworks without a concrete current requirement.
 
-Repository Structure
-
-The initial repository structure is:
-
-apps/
-├── web/
-└── api/
-
-packages/
-├── domain/
-└── database/
-
-docs/
-
-Responsibilities should remain clearly separated.
-
+Repository Responsibilities
 apps/web
 
-Contains the React frontend.
+Owns:
 
-Responsibilities include:
+React user interface.
+Forms and user input.
+Client-side interaction.
+REST API calls.
+Presentation of results.
+User-facing error states.
 
-User interface
-Forms
-Client-side interaction
-REST API calls
-Presentation of results
-User-facing error states
-
-Do not place authoritative PrintForge business calculations or readiness rules in React components.
+Do not place authoritative PrintForge business rules in React.
 
 apps/api
 
-Contains the Fastify REST API.
+Owns:
 
-Responsibilities include:
+Fastify routes.
+HTTP request and response handling.
+Runtime input validation.
+API-level error handling.
+Orchestration of persistence and domain operations.
 
-HTTP routes
-Request handling
-Input validation
-Application orchestration
-HTTP responses
-API-level error handling
+Keep route handlers relatively thin.
 
-Keep route handlers reasonably thin.
-
-Do not implement significant business calculations directly inside route handlers.
+Do not implement core economics or readiness rules directly inside route
+handlers.
 
 packages/domain
 
-Contains PrintForge business rules and calculations.
+Owns:
 
-Examples include:
+Business calculations.
+Manufacturing rules.
+Economics.
+Readiness logic.
+Domain invariants.
 
-Filament cost calculations
-Plate cost calculations
-Product Variant economics
-Cash contribution
-Margin
-Printer-hour economics
-Active-labor economics
-Commercial-readiness rules
+Prefer pure TypeScript functions where practical.
 
-Prefer pure TypeScript functions for domain calculations when practical.
+The domain package must not depend on React or Fastify.
 
-The domain package should not depend on React or Fastify.
-
-Where practical, domain logic should remain independent of Drizzle and PostgreSQL.
+Where practical, domain calculations should also remain independent of Drizzle
+and PostgreSQL.
 
 packages/database
 
-Contains persistence concerns.
-
-Responsibilities include:
-
-Drizzle schemas
-PostgreSQL configuration
-Database connections
-Migrations
-Database-specific queries
-Persistence operations
-
-Do not make the database layer the primary implementation location for PrintForge business rules.
-
-Core Domain Model
-
-Preserve the following primary manufacturing hierarchy:
-
-Model
-  ↓
-Product
-  ↓
-Product Variant
-  ↓
-Production Profile
-  ↓
-Plate
-  ↓
-Filament Usage
-
-Important related concepts include:
-
-ModelRightsReview
-SourceProfile
-ProductModelLink
-ThirdPartyIpReview
-SafetyReview
-ProductComponent
-ConsumableUsage
-PostProcessingStep
-MarketObservation
-
-Do not collapse these concepts together merely to reduce the number of entities.
-
-Their distinctions are intentional and documented in the domain model.
-
-Important Domain Rules
-Model and Product Are Different Concepts
-
-A Model represents the underlying digital design.
-
-A Product represents a marketed physical offering.
-
-A Product may use multiple Models, and a Model may be used by multiple Products.
-
-SourceProfile and ProductionProfile Are Different Concepts
-
-A SourceProfile represents provenance or historical information about an external/source print profile.
-
-A ProductionProfile represents the user's actual manufacturing recipe.
-
-ProductionProfile is the source of truth for PrintForge manufacturing calculations.
-
-Editing a ProductionProfile must not alter its SourceProfile.
-
-Plate Is a First-Class Manufacturing Entity
-
-A Plate represents one slicer/build-plate manufacturing batch.
-
-A Plate owns information such as:
-
-Print time
-Useful output/yield
-Filament usage
-Waste
-
-Do not automatically model every physical part printed on a Plate as a separate database entity.
-
-Model manufacturing detail only when it affects costing, assembly, reuse, understanding, or a commercial/production decision.
-
-Filament Usage Must Support Multiple Filaments
-
-Do not create fixed fields such as:
-
-filament1
-filament2
-filament3
-filament4
-
-Filament usage is a one-to-many relationship.
-
-The design must support arbitrary numbers of filament/material/color usages without schema redesign.
-
-Track product material and waste separately where required.
-
-Internally Manufactured Components Reference Product Variants
-
-An internally manufactured ProductComponent references another ProductVariant.
-
-It does not directly reference a ProductionProfile.
-
-The referenced ProductVariant provides its active/default ProductionProfile for V1 costing.
-
-Prevent direct and indirect circular manufactured-component dependencies.
-
-Units Per Sale and Plate Yield Are Different
-
-unitsPerSale describes how many units are included in a customer purchase.
-
-Plate yield describes how many useful units or outputs are produced by a manufacturing Plate.
-
-Do not treat these values as interchangeable.
-
-Economics Rules
-
-Use Cash Contribution as the primary V1 profitability term.
-
-Conceptually:
-
-Cash Contribution =
-Planned Selling Price
-- Relevant V1 Cash Costs
-
-Relevant V1 cash costs may include:
-
-Manufacturing/material costs
-Purchased components
-Internally manufactured components
-Consumables
-Packaging
-Applicable marketplace/payment fees
-
-Active labor should be shown separately rather than silently treated as a cash expense.
-
-Important derived metrics include:
-
-Material cost
-Cost per sale
-Cash contribution
-Margin
-Printer hours per sale
-Contribution per printer-hour
-Active labor hours
-Contribution per active-labor hour
-
-Prefer calculating derived values from authoritative inputs rather than persisting duplicate calculated state.
-
-Commercial Readiness
-
-Commercial readiness should be derived from V1-modeled concerns.
-
-Examples of relevant concerns include:
-
-Model commercial-rights status
-Third-party IP review
-V1 safety review
-Product economics
-
-Readiness should explain why a Product or Product Variant received its result.
-
-Potential outcomes include concepts such as:
-
-BLOCKED
-REVIEW_REQUIRED
-QUESTIONABLE
-PROMISING
-READY
-
-Exact labels and thresholds may evolve as implementation proceeds.
-
-Do not make legal determinations.
-
-PrintForge records rights and review information and helps identify unresolved issues.
-
-V1 / V2 Boundary
-
-Do not implement V2 features merely because the current architecture could support them.
-
-Examples currently deferred from V1 include:
-
-Shipping calculation and shipping rules
-Final QC workflow
-Manufactured-component inventory
-Spool inventory
-Advanced bundles/configurations
-Detailed material-science rules
-Detailed paint inventory
-Full sales/order management
-Printer integrations
-Automatic Bambu Studio imports
-Marketplace integrations
-Full accounting
-Full fulfillment workflows
-
-Most importantly:
-
-V2-only concepts must not block V1 commercial readiness.
-
-If a feature is documented as V2, do not introduce V1 validation or readiness requirements that depend on it.
+Owns:
+
+Drizzle schema definitions.
+PostgreSQL configuration.
+Connections.
+Migrations.
+Database-specific queries.
+Persistence operations.
+
+Do not make the database package the authoritative implementation of
+PrintForge business calculations.
+
+Critical Domain Guardrails
+
+The complete domain rules live in docs/domain-model.md. The following are
+high-risk rules that must be preserved during implementation:
+
+Model represents the digital design, not manufacturing configuration.
+SourceProfile represents provenance and source-provided information.
+ProductionProfile represents actual manufacturing truth.
+Product and Model have a many-to-many relationship through
+ProductModelLink.
+ProductVariant represents the actual sellable variation.
+unitsPerSale and Plate yield are different concepts.
+Plate is a first-class manufacturing concept.
+Plate owns print duration, usable output/yield, and FilamentUsage.
+Filament usage is relational and arbitrary in number. Never introduce fixed
+fields such as filament1, filament2, etc.
+Actual manufacturing material belongs to production usage rather than
+Model.
+ProductComponent is either PURCHASED or
+INTERNALLY_MANUFACTURED in V1.
+An internally manufactured component references another ProductVariant,
+not a ProductionProfile.
+The referenced ProductVariant's applicable current ProductionProfile drives
+its current manufacturing economics.
+Internally manufactured component relationships must not contain direct or
+indirect cycles.
+Customer-supplied or non-included compatibility items are not costed
+ProductComponents in V1.
+Active human labor is distinct from unattended printer time.
+Active personal labor is shown separately from cash costs.
+Cash Contribution is the primary V1 profitability concept.
+Market Observations represent observed comparable asking prices, not proven
+sales or market value.
+Rights/IP reviews record review state and do not make legal determinations.
+Safety review is lightweight and advisory.
+Current economic metrics and readiness should generally be derived from
+authoritative inputs rather than persisted as independent mutable state.
+Readiness must be explainable and may only be blocked by concerns modeled in
+V1.
+Shipping is V2 and must not block V1 readiness.
+Detailed final QC is V2 and must not block V1 readiness.
+
+When implementing or changing one of these areas, read the applicable sections
+of docs/domain-model.md and docs/requirements.md rather than relying only on
+this summary.
+
+V1 Scope Discipline
+
+Do not introduce V2 functionality as a prerequisite for V1.
+
+Examples of currently deferred concerns include:
+
+Shipping calculation and fulfillment.
+Detailed final QC workflows.
+Inventory management.
+Advanced bundles and selling configurations.
+Detailed material-science systems.
+Full accounting.
+Full order management.
+Printer telemetry and print queues.
+
+Reasonable extension points are acceptable.
+
+Infrastructure built solely for hypothetical future requirements is not.
+
+Derived Data
+
+Prefer authoritative inputs plus domain calculations over duplicated calculated
+state.
+
+Examples of values that should normally be derived include:
+
+Material cost.
+Cost per sale.
+Cash Contribution.
+Cash Contribution Margin.
+Printer hours per sale.
+Cash Contribution per printer hour.
+Active labor hours per sale.
+Cash Contribution per active labor hour.
+Current readiness assessment.
+
+Persist review state, observations, user-entered assumptions, and other durable
+information that cannot be reconstructed from existing source data.
+
+Consult docs/database-schema.md before changing what is persisted.
 
 Testing Expectations
 
-Use Vitest for:
+Use Vitest for unit, domain, calculation, backend-service, and appropriate
+integration tests.
 
-Unit tests
-Domain tests
-Calculation tests
-Appropriate service/integration tests
+Business rules in packages/domain should receive strong unit-test coverage.
 
-Domain/business rules should receive strong automated test coverage.
+Test behavior and important edge cases rather than implementation details.
 
-Test meaningful edge cases, not only happy paths.
+Use Playwright for a smaller number of important end-to-end user workflows.
 
-Use Playwright for a smaller number of high-value end-to-end workflows.
+Do not duplicate every unit-level rule through browser tests.
 
-Do not duplicate every unit test through the browser.
+When changing a business calculation or invariant:
 
-General strategy:
+Understand the documented rule.
+Add or update tests that demonstrate the expected behavior.
+Implement the smallest change needed.
+Run relevant tests and type checking.
+Change Discipline
 
-Many fast Vitest tests and fewer high-value Playwright tests.
+Before modifying code:
 
-When fixing a defect in testable business logic, prefer adding a regression test that demonstrates the failure before or alongside the fix.
+Inspect the existing implementation.
+Inspect existing tests.
+Read the relevant authoritative documentation.
+Understand the current behavior before replacing it.
 
-Development Principles
-Prefer Small, Reviewable Changes
+While modifying code:
 
-Do not make broad unrelated changes when implementing a focused task.
+Keep changes small and reviewable.
+Avoid unrelated refactoring.
+Follow existing naming and package conventions.
+Do not invent requirements.
+Do not silently expand scope.
+Do not add dependencies unless they solve a concrete current problem.
+Do not create generic abstractions before actual duplication or complexity
+justifies them.
 
-Keep changes small enough that a developer can reasonably review and understand them.
+After modifying code:
 
-Do Not Invent Requirements
+Run relevant tests.
+Run relevant type checking.
+Review the diff for unrelated changes.
+Update documentation when a change legitimately alters documented
+architecture, domain behavior, persistence design, or scope.
 
-If the existing requirements are ambiguous and the ambiguity materially affects product behavior or architecture, surface the question rather than silently choosing a major new product rule.
+Do not change authoritative documentation merely to make an implementation
+mistake appear correct.
 
-Reasonable low-risk implementation details may be chosen when they do not alter documented product behavior.
+Working With Ambiguity or Conflict
 
-Avoid Premature Abstraction
+If an implementation detail is not specified by the documentation, choose the
+simplest approach consistent with the existing architecture and domain model.
 
-Do not introduce abstractions simply because they might become useful later.
+If two authoritative documents appear to conflict:
 
-Examples include:
+Do not guess which rule should win.
+Identify the conflicting statements.
+Surface the conflict before changing the documented design.
 
-Generic repository frameworks
-Dependency-injection frameworks
-Event buses
-Generic shared packages
-Generic utility packages
-Complex plugin architectures
-Additional monorepo orchestration platforms
+For business/domain meaning, docs/domain-model.md is the canonical conceptual
+source.
 
-Before introducing an abstraction, identify the concrete current problem it solves.
+For V1 product behavior and scope, use docs/requirements.md.
 
-Add Dependencies Intentionally
+For persistence details, use docs/database-schema.md, while preserving the
+domain model.
 
-Do not add a third-party dependency when the standard platform or existing stack can reasonably solve the problem.
+For application structure, use docs/architecture.md.
 
-When proposing a significant new dependency, explain:
+For accepted architectural choices and rationale, use docs/decisions.md.
 
-What problem it solves
-Why existing tools are insufficient
-What tradeoffs it introduces
-Prefer Clarity Over Cleverness
+Preserve Learning Value
 
-Code should be understandable by a developer reading it later.
+PrintForge is both a working product and a software-development learning
+project.
 
-Prefer:
+When assisting with implementation:
 
-Explicit names
-Small focused functions
-Clear control flow
-Clear domain terminology
-Straightforward TypeScript
-
-Avoid unnecessary metaprogramming, indirection, or clever abstractions.
-
-Preserve Domain Terminology
-
-Use the terminology defined by PrintForge consistently.
-
-For example, do not casually rename:
-
-Product Variant to Item
-Production Profile to Print Settings
-Plate to Job
-Cash Contribution to Profit
-SourceProfile to ProductionProfile
-
-These terms have specific meanings in the PrintForge domain.
-
-Learning-Oriented Development
-
-PrintForge is both a useful application and a software-development learning/portfolio project.
-
-When acting as a coding agent:
-
-Do not optimize solely for producing the maximum amount of code as quickly as possible.
-Prefer implementations that can be understood and explained by the developer.
-Keep significant architectural decisions visible.
-Explain non-obvious patterns or tradeoffs when appropriate.
-Avoid hiding important behavior behind unnecessary abstractions.
-Do not rewrite large areas of working code without a concrete reason.
-Prefer incremental implementation over generating the entire application at once.
-
-When multiple reasonable approaches exist and the choice would materially affect architecture or learning value, present the tradeoff rather than silently selecting a substantially different direction.
-
-Working With Existing Code
-
-Before modifying existing code:
-
-Inspect the relevant implementation.
-Inspect relevant tests.
-Check applicable project documentation.
-Understand existing naming and patterns.
-Make the smallest coherent change that satisfies the requirement.
-
-Do not assume a file or abstraction exists without checking the repository.
-
-Do not replace existing patterns merely with personally preferred patterns unless there is a demonstrated problem.
-
-Documentation
-
-Update documentation when a change materially alters:
-
-Architecture
-Domain behavior
-Database relationships
-V1 requirements
-Technology decisions
-
-Significant architectural decisions should be recorded in:
-
-docs/decisions.md
-
-Do not allow implementation and documentation to silently diverge.
-
+Prefer clear, understandable code over unnecessarily clever code.
+Explain significant design choices when useful.
+Avoid hiding simple behavior behind excessive abstractions.
+Keep changes narrow enough that a developer can review and understand them.
+Do not replace learning opportunities with large unexplained rewrites.
 Guiding Question
 
-When considering additional complexity, ask:
+Before adding a dependency, framework, package, abstraction, service, table, or
+major new concept, ask:
 
 What current PrintForge problem does this solve?
 
-If there is no concrete answer, prefer the simpler implementation and defer the complexity until it is needed.
+If there is no concrete answer, defer it.
