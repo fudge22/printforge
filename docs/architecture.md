@@ -84,6 +84,7 @@ printforge/
 ├── docs/
 │   ├── requirements.md
 │   ├── domain-model.md
+│   ├── database-schema.md
 │   ├── architecture.md
 │   └── decisions.md
 │
@@ -126,7 +127,7 @@ Instead:
 
 React
    ↓
-GET /products/:id/readiness
+GET /variants/:id/readiness
    ↓
 Fastify
    ↓

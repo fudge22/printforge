@@ -140,6 +140,11 @@ Plate
   ↓
 Filament Usage
 
+This diagram represents the conceptual journey through the domain. It does
+not imply a direct one-to-many relationship between Model and Product.
+Models and Products have a many-to-many relationship represented through
+ProductModelLink, as defined in `docs/domain-model.md`.
+
 PrintForge also contains many-to-many relationships, reusable manufactured components, review records, and shared entities such as filament.
 
 PostgreSQL provides:
@@ -435,4 +440,50 @@ Consequences
 
 The architecture is expected to evolve as real implementation needs are discovered.
 
-Changes to major architectural decisions should be documented in this file.git status
+Changes to major architectural decisions should be documented in this file.
+
+ADR-015: Prefer Derived Business Metrics Over Persisted Calculated State
+
+Status: Accepted
+
+Decision
+
+Business values that can be reliably calculated from authoritative persisted
+inputs should generally be derived rather than stored as independent mutable
+state.
+
+Examples include:
+
+- Material cost
+- Cost per sale
+- Cash Contribution
+- Cash Contribution Margin
+- Printer hours per sale
+- Cash Contribution per printer hour
+- Active labor hours per sale
+- Cash Contribution per active labor hour
+- Current product-readiness assessment
+
+Rationale
+
+Persisting calculated values alongside their source inputs creates the risk
+that the calculated value becomes stale or inconsistent when the underlying
+data changes.
+
+Keeping calculations in the domain layer provides a single authoritative
+implementation of PrintForge business rules and makes those rules easier to
+test and explain.
+
+Consequences
+
+Authoritative inputs and user-reviewed state are persisted.
+
+Derived economic metrics are normally calculated by packages/domain from
+current authoritative inputs.
+
+Review states, market observations, and other user-entered findings remain
+persisted because they cannot be reconstructed from manufacturing data alone.
+
+If calculated values are persisted later for caching, reporting, or history,
+they must be treated as derived snapshots rather than the authoritative source
+of current business state.
