@@ -4,6 +4,22 @@ export interface ProductEconomicsInput {
   printerHoursPerSale: number;
 }
 
+export interface PrinterHoursPerSaleInput {
+  totalPlatePrintHours: number;
+  usableUnitsProduced: number;
+  unitsPerSale: number;
+}
+
+export function calculatePrinterHoursPerSale(
+  input: PrinterHoursPerSaleInput
+): number {
+  if (input.usableUnitsProduced === 0) {
+    return 0;
+  }
+
+  return (input.totalPlatePrintHours / input.usableUnitsProduced) * input.unitsPerSale;
+}
+
 export function calculateCashContribution(
   input: ProductEconomicsInput
 ): number {
