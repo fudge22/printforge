@@ -435,4 +435,4 @@ Consequences
 
 The architecture is expected to evolve as real implementation needs are discovered.
 
-Changes to major architectural decisions should be documented in this file.
+Changes to major architectural decisions should be documented in this file.git status
