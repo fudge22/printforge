@@ -16,6 +16,28 @@ export interface FilamentUsageCostInput {
   costPerGram: number;
 }
 
+export interface MaterialCostPerSaleInput {
+  plateMaterialCost: number;
+  plannedUsableUnits: number;
+  unitsPerSale: number;
+}
+
+export function calculateMaterialCostPerSale(
+  input: MaterialCostPerSaleInput
+): number {
+  if (input.plannedUsableUnits <= 0) {
+    throw new RangeError("plannedUsableUnits must be greater than zero");
+  }
+  if (input.plateMaterialCost < 0) {
+    throw new RangeError("plateMaterialCost must not be negative");
+  }
+  if (input.unitsPerSale < 0) {
+    throw new RangeError("unitsPerSale must not be negative");
+  }
+
+  return (input.plateMaterialCost / input.plannedUsableUnits) * input.unitsPerSale;
+}
+
 export function calculatePlateMaterialCost(
   filamentUsages: readonly FilamentUsageCostInput[]
 ): number {

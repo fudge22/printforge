@@ -3,6 +3,7 @@ import {
   calculateCashContribution,
   calculateContributionPerPrinterHour,
   calculateMargin,
+  calculateMaterialCostPerSale,
   calculatePlateMaterialCost,
   calculatePrinterHoursPerSale,
   type ProductEconomicsInput
@@ -60,6 +61,48 @@ describe("plate material cost", () => {
       ])).toThrow(new RangeError(`${field} must not be negative`));
     }
   );
+});
+
+describe("material cost per sale", () => {
+  it.each([
+    { plateMaterialCost: 12, plannedUsableUnits: 8, unitsPerSale: 1, expected: 1.5 },
+    { plateMaterialCost: 12, plannedUsableUnits: 8, unitsPerSale: 2, expected: 3 },
+    { plateMaterialCost: 0, plannedUsableUnits: 8, unitsPerSale: 2, expected: 0 },
+    { plateMaterialCost: 12, plannedUsableUnits: 8, unitsPerSale: 0, expected: 0 }
+  ])("calculates $expected from $plateMaterialCost cost, $plannedUsableUnits yield, and $unitsPerSale per sale", ({ expected, ...input }) => {
+    expect(calculateMaterialCostPerSale(input)).toBe(expected);
+  });
+
+  it("preserves fractional material cost per sale without rounding", () => {
+    expect(calculateMaterialCostPerSale({
+      plateMaterialCost: 2.5,
+      plannedUsableUnits: 3,
+      unitsPerSale: 2
+    })).toBeCloseTo(5 / 3, 10);
+  });
+
+  it.each([
+    { plateMaterialCost: 12, plannedUsableUnits: 0, unitsPerSale: 2 },
+    { plateMaterialCost: 0, plannedUsableUnits: 0, unitsPerSale: 2 },
+    { plateMaterialCost: 12, plannedUsableUnits: 0, unitsPerSale: 0 },
+    { plateMaterialCost: 12, plannedUsableUnits: -1, unitsPerSale: 2 },
+    { plateMaterialCost: 0, plannedUsableUnits: -1, unitsPerSale: 0 }
+  ])("rejects invalid yield with $plateMaterialCost cost, $plannedUsableUnits yield, and $unitsPerSale per sale", (input) => {
+    expect(() => calculateMaterialCostPerSale(input)).toThrow(
+      new RangeError("plannedUsableUnits must be greater than zero")
+    );
+  });
+
+  it.each([
+    { plateMaterialCost: -1, plannedUsableUnits: 8, unitsPerSale: 2, field: "plateMaterialCost" },
+    { plateMaterialCost: -1, plannedUsableUnits: 8, unitsPerSale: 0, field: "plateMaterialCost" },
+    { plateMaterialCost: 12, plannedUsableUnits: 8, unitsPerSale: -1, field: "unitsPerSale" },
+    { plateMaterialCost: 0, plannedUsableUnits: 8, unitsPerSale: -1, field: "unitsPerSale" }
+  ])("rejects negative $field with $plateMaterialCost cost and $unitsPerSale per sale", ({ field, ...input }) => {
+    expect(() => calculateMaterialCostPerSale(input)).toThrow(
+      new RangeError(`${field} must not be negative`)
+    );
+  });
 });
 
 describe("product economics", () => {
