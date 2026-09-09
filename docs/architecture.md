@@ -538,3 +538,53 @@ When deciding whether to introduce another framework, package, abstraction, or s
 What current PrintForge problem does this solve?
 
 If there is no concrete answer, defer the decision until the need exists.
+
+17. Frontend and UX Evolution
+
+The React frontend should be developed iteratively alongside the domain and API rather than after the entire backend is complete.
+
+Early UI implementations are expected to evolve as real workflows expose better ways to organize and present information. Components should therefore favor clear responsibilities and composition over abstractions that assume the final screen structure is already known.
+
+The initial frontend direction includes:
+
+A browsable Models experience.
+Model import as a primary user action.
+A Model-focused workspace for progressively completing an evaluation.
+Access to reusable filament information.
+Product and commercial evaluation information as the domain workflow grows.
+
+These are workflow directions rather than fixed page layouts.
+
+The current UI mockups are design references only. They do not define required navigation, exact screen composition, styling, tabs, cards, or field placement.
+
+UI and Domain Boundaries
+
+The frontend is responsible for presentation and user interaction, but it should not become the authoritative implementation of PrintForge business rules.
+
+React components may:
+
+Collect and display user input.
+Display calculated and derived information.
+Manage presentation-specific state.
+Communicate with the API.
+Adapt domain concepts into user-friendly terminology.
+
+React components should not become the canonical implementation of:
+
+Cost formulas.
+Commercial viability rules.
+Readiness rules.
+Manufacturing economics.
+Domain validation that must remain consistent outside the UI.
+
+Business calculations and rules should continue to live in packages/domain where practical.
+
+The UI may use friendlier labels than the domain model. For example, a domain property such as plannedUsableUnits may be presented to the user as "Usable pieces per plate." User-facing terminology does not require renaming an otherwise appropriate domain concept.
+
+Initial Frontend Development
+
+The first frontend implementation may use representative sample data while the API, database, and STL import pipeline are still being developed.
+
+This allows the Models experience and Model workspace to be explored without prematurely coupling UI development to unfinished persistence or import infrastructure.
+
+Sample data is temporary presentation scaffolding and should not introduce duplicate business rules that later compete with the domain layer.

@@ -457,3 +457,104 @@ What current PrintForge problem does this solve?
 V1 should prefer the simplest implementation that correctly represents the current business requirement.
 
 Future possibilities should not add unnecessary complexity to the current system.
+
+22. User Experience Requirements
+Model-Centered Entry Point
+
+Importing a 3D model is a primary entry point into PrintForge.
+
+The intended user experience begins with a model that the user is considering producing or selling. The user should be able to import a supported 3D model file, beginning with STL support, and have PrintForge create a Model from that file.
+
+After import, PrintForge should present information that can be determined from the model automatically and clearly identify information that still requires user input.
+
+The application should progressively build the commercial evaluation around the imported Model rather than requiring the user to understand or manually create the underlying domain hierarchy before beginning an evaluation.
+
+Model Library
+
+Users need a browsable collection of the Models they have added to PrintForge.
+
+The Model library should allow users to:
+
+Import a new Model.
+View previously imported Models.
+Identify Models visually where preview information is available.
+Search or otherwise locate a Model as the collection grows.
+Open a Model to view and continue its evaluation.
+See useful high-level information about a Model without opening every detail.
+
+The exact presentation of the Model library, including cards, tables, lists, filters, sorting, and navigation, is intentionally not specified for V1 and may evolve as the application is developed.
+
+Model Workspace
+
+A user should be able to open an imported Model and work with the information related to evaluating that Model for commercial use.
+
+The workspace should make it easy to distinguish between:
+
+Information PrintForge can determine or derive.
+Information the user has already provided.
+Information still needed to complete the evaluation.
+
+Relevant information may include:
+
+Model file information and geometry.
+Source and commercial-use rights information.
+Products that use the Model.
+Production configuration.
+Plates and planned production yield.
+Filament usage.
+Additional production costs.
+Planned selling price.
+Calculated economics.
+Commercial readiness and the reasons behind that assessment.
+
+The exact grouping, navigation, tabs, panels, and screen layout are intentionally flexible.
+
+Model and Product Distinction
+
+The user interface should preserve the distinction between a Model and a Product without requiring the user to understand the internal domain model.
+
+A Model represents an imported design or design asset.
+
+A Product represents something the user is evaluating for sale.
+
+A Model may contribute to multiple Products, and a Product may use multiple Models.
+
+The UI should present these relationships naturally rather than treating an imported STL and a sellable Product as the same concept.
+
+Filament Selection
+
+Users should be able to maintain reusable filament information so that material details do not need to be re-entered for every production configuration.
+
+When configuring planned filament usage, the user should be able to select from previously entered filament information and specify the amount required by the Plate.
+
+For V1 economics, filament usage continues to provide or derive the costPerGram required by the domain calculations.
+
+A richer distinction between reusable material types, purchased spools, inventory, and purchase history remains future scope as described in the domain model.
+
+Progressive Evaluation
+
+PrintForge should allow an evaluation to be incomplete.
+
+Users should be able to import a Model and return to it later without supplying every piece of commercial and manufacturing information immediately.
+
+As information is added, PrintForge should progressively provide more useful economics and readiness information.
+
+Missing information should be communicated to the user rather than replaced with misleading calculated defaults.
+
+Responsive Calculations
+
+Derived economics should update from the current production and pricing inputs without requiring the user to manually initiate a separate calculation process.
+
+Where a calculation cannot be performed because required information is missing or invalid, the UI should communicate what is needed rather than presenting a misleading numeric result.
+
+UX Flexibility
+
+The V1 user interface is intentionally iterative.
+
+Requirements describe user capabilities and domain meaning, not a fixed screen layout. Navigation, cards, tables, tabs, forms, field placement, visual styling, and information grouping may change as workflows are implemented and evaluated.
+
+UI implementation decisions should remain easy to change unless a specific interaction becomes a confirmed product requirement.
+
+The guiding UX principle is:
+
+Start with the model, show what PrintForge knows, ask for what is missing, and progressively explain whether the resulting product appears commercially viable.
