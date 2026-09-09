@@ -398,6 +398,14 @@ Filament represents the reusable material definition.
 
 Actual consumption belongs to FilamentUsage.
 
+13.1 Future Filament Modeling
+
+A future richer model should distinguish a reusable filament/material type, such as PLA, PLA Matte, PLA Silk, or PLA+, from a specific imported or purchased filament/spool.
+
+A specific filament/spool may eventually contain its filament type, color, spool size/weight, spool cost, and a derived cost per gram.
+
+This richer filament catalog model is deferred. Full spool inventory and purchase-history modeling remain outside V1. V1 Plate material-cost calculations must not depend on or prematurely implement this future model; they use an already-derived cost per gram for each usage.
+
 14. Filament Usage
 
 A FilamentUsage represents the amount of a particular Filament consumed by a particular Plate.
@@ -410,7 +418,7 @@ Plate
   ├── FilamentUsage ── White PLA
   └── FilamentUsage ── Red PLA
 
-A Plate may have zero, one, or many FilamentUsage records.
+A Plate may have zero, one, or many FilamentUsage records and may therefore use multiple different filaments.
 
 There must not be a fixed number of filament slots.
 
@@ -428,7 +436,27 @@ Plate
    ↓
 0..many FilamentUsage
 
-Material cost should be derived from actual filament consumption and the relevant filament cost.
+14.1 V1 Material Cost
+
+Each filament usage used for costing tracks:
+
+Material grams (materialGrams).
+Waste grams (wasteGrams).
+An already-derived cost per gram (costPerGram).
+
+Material grams and waste grams remain separate to preserve the distinction between material that becomes useful output and material that is wasted. Both represent consumed filament and contribute to cash material cost.
+
+Plate material cost is derived across all FilamentUsage records for the Plate:
+
+sum((materialGrams + wasteGrams) * costPerGram)
+
+An empty collection of filament usages produces a material cost of 0.
+
+Zero material grams, zero waste grams, and zero cost per gram are valid. A zero gram amount contributes 0 for that amount; a zero cost per gram makes the entire usage contribute 0.
+
+Negative material grams, waste grams, or cost per gram are invalid domain data and must not be silently converted to zero.
+
+Plate material cost is derived business data and must not be persisted as authoritative state.
 
 15. Product Component
 

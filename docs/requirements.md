@@ -185,7 +185,7 @@ Actual manufacturing information must be kept distinct from information describi
 
 9. Filament and Material Usage
 
-A plate may use zero, one, or many filament usages.
+A plate may use zero, one, or many filament usages, allowing multiple different filaments on the same plate.
 
 The design must not assume a fixed maximum number of filament materials.
 
@@ -199,7 +199,9 @@ filament16
 
 Material information belongs to actual production usage rather than to the abstract source Model.
 
-Material cost should be derived from actual recorded manufacturing usage.
+V1 costing uses material grams, waste grams, and an already-derived cost per gram for each filament usage. Material and waste must remain separately recorded to distinguish useful output from waste, while both contribute to cash material cost.
+
+Plate material cost sums the cost of material and waste across all usages. An empty collection produces 0. Zero amounts and zero cost per gram are valid; negative amounts or costs are invalid and must not be silently converted to zero. The canonical formula and input rules are defined in domain-model.md, section 14.1.
 
 10. Components
 
@@ -374,6 +376,12 @@ The absence of a formal final-QC workflow must not block V1 readiness.
 
 Normal manufacturing information and safety concerns that are already part of V1 may still affect readiness.
 
+Filament Catalog and Inventory
+
+The richer filament type and specific filament/spool distinction described in domain-model.md, section 13.1, is deferred. Full spool inventory and purchase-history modeling remain outside V1.
+
+V1 plate material-cost calculations must work from usage amounts and an already-derived cost per gram without requiring or prematurely implementing this future catalog/inventory model.
+
 This boundary is intentional: future concerns must not prevent V1 from delivering useful commercial evaluation.
 
 19. Calculated Versus Recorded Information
@@ -391,6 +399,8 @@ Cash Contribution per printer hour.
 Cash Contribution per active labor hour.
 
 This reduces the risk of calculated values becoming inconsistent with their source data.
+
+In particular, Plate material cost is derived business data and must not be persisted as authoritative state.
 
 Review state, user-entered observations, and other information representing actual user decisions or findings should be persisted.
 
