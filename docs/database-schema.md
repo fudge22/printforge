@@ -333,18 +333,20 @@ Important rule
 
 ProductionProfile represents actual manufacturing truth.
 
+For V1 economics, this means the chosen manufacturing configuration and its planned inputs, not execution results.
+
 SourceProfile must not substitute for this entity.
 
 15. plates
 
-Represents a print job/build plate used by a ProductionProfile.
+Represents a manufacturing plan/template for a build plate used by a ProductionProfile. V1 economics uses planned values rather than actual production results.
 
 Suggested fields
 id
 production_profile_id
 name
-print_hours
-usable_units_produced
+planned_print_hours
+planned_usable_units
 notes
 created_at
 updated_at
@@ -358,11 +360,15 @@ Important rules
 
 Plate owns:
 
-Print duration.
-Usable output/yield.
-Filament usage.
+Planned print duration.
+Planned usable yield.
+Planned filament usage.
 
-usable_units_produced is not units_per_sale.
+planned_usable_units corresponds to domain plannedUsableUnits and is not units_per_sale. planned_print_hours supplies the planned plate print time.
+
+Negative planned values are invalid domain data. Any per-sale calculation requires planned_usable_units greater than zero; zero yield must not produce a fallback per-sale result of 0.
+
+Actual production results belong to a future PrintJob or equivalent execution/history concept, not these Plate planning fields. Actual print time, material consumed, usable units, failures, and waste are outside V1; no execution/history tables are required here.
 
 A ProductionProfile may require multiple Plates.
 
@@ -392,11 +398,11 @@ A Filament describes the reusable material definition.
 
 It does not represent consumption by itself.
 
-Actual consumption belongs to filament_usages.
+Planned consumption belongs to filament_usages in V1.
 
 17. filament_usages
 
-Represents filament consumed by a specific Plate.
+Represents planned filament consumption for a specific Plate in V1.
 
 Suggested fields
 id
@@ -424,7 +430,7 @@ filament_1
 filament_2
 filament_3
 
-Material cost should be derived from actual usage and Filament cost.
+Material cost should be derived from planned usage and Filament cost.
 
 18. product_components
 
@@ -676,7 +682,7 @@ Market asking price.
 
 Production measurements such as:
 
-Print hours.
+Planned print hours.
 Weight.
 Quantity used.
 Labor hours.

@@ -141,12 +141,14 @@ Printer hours per sale should represent the amount of printer capacity required 
 For a plate:
 
 Printer Hours per Sale =
-(Total Plate Print Hours / Usable Units Produced)
+(Planned Plate Print Hours / Planned Usable Units)
 × Units Required per Sale
 
 Plate yield and units required per sale are different concepts and must remain distinct.
 
-The system must safely handle a plate with zero usable units.
+V1 economics must use planned plate print time and planned usable yield (plannedUsableUnits), not actual production results. For any per-sale calculation, zero or negative plannedUsableUnits is invalid domain data because a plan with no usable output cannot provide a per-sale result. The calculation must reject it rather than return 0, even when planned print time or units per sale is zero.
+
+Negative planned print time or units per sale is also invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print time or zero units per sale yields 0 printer hours per sale.
 
 7.3 Cash Contribution per Printer Hour
 Cash Contribution per Printer Hour =
@@ -172,16 +174,16 @@ Manufacturing information should support:
 
 One or more production profiles over time.
 One or more printer plates associated with a production profile.
-Print duration for each plate.
-Usable output/yield from each plate.
-Arbitrary filament usage associated with each plate.
+Planned print duration for each plate.
+Planned usable yield (plannedUsableUnits) for each plate.
+Arbitrary planned filament usage associated with each plate.
 Purchased components.
 Internally manufactured components.
 Consumables.
 Packaging.
 Post-processing work.
 
-Actual manufacturing information must be kept distinct from information describing the original source model.
+A Plate is a manufacturing plan/template for V1 economics. The chosen manufacturing configuration and its planned inputs must be kept distinct from source-model information and from future actual production results.
 
 9. Filament and Material Usage
 
@@ -197,9 +199,9 @@ filament3
 ...
 filament16
 
-Material information belongs to actual production usage rather than to the abstract source Model.
+Material information belongs to planned production usage in V1 rather than to the abstract source Model.
 
-V1 costing uses material grams, waste grams, and an already-derived cost per gram for each filament usage. Material and waste must remain separately recorded to distinguish useful output from waste, while both contribute to cash material cost.
+V1 costing uses planned material grams, planned waste grams, and an already-derived cost per gram for each filament usage. Material and waste must remain separately recorded to distinguish planned useful output from planned waste, while both contribute to cash material cost.
 
 Plate material cost sums the cost of material and waste across all usages. An empty collection produces 0. Zero amounts and zero cost per gram are valid; negative amounts or costs are invalid and must not be silently converted to zero. The canonical formula and input rules are defined in domain-model.md, section 14.1.
 
@@ -375,6 +377,10 @@ Detailed final QC is a V2 concern.
 The absence of a formal final-QC workflow must not block V1 readiness.
 
 Normal manufacturing information and safety concerns that are already part of V1 may still affect readiness.
+
+Actual Production Results
+
+Actual print time, material consumed, usable units, failures, and waste belong to a future PrintJob or equivalent execution/history concept. Actual production tracking is outside V1 and must not be mixed into the Plate planning definition or required for V1 economics.
 
 Filament Catalog and Inventory
 

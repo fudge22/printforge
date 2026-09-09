@@ -288,10 +288,10 @@ It must not be confused with plate yield.
 
 Example:
 
-A plate produces:        8 usable pieces
+A plate plans to produce: 8 usable pieces
 A customer receives:     2 pieces per sale
 
-Plate yield = 8
+plannedUsableUnits = 8
 unitsPerSale = 2
 
 These values represent different concepts and must remain separate.
@@ -334,11 +334,13 @@ The exact persistence mechanism for identifying that profile belongs in the data
 
 ProductionProfile is the source of actual manufacturing truth.
 
+In V1, this means the chosen manufacturing configuration and its planned values, not actual production results.
+
 Costing and capacity calculations should use the applicable ProductionProfile rather than SourceProfile suggestions.
 
 12. Plate
 
-A Plate is a first-class manufacturing concept representing a printer build plate or print job required as part of manufacturing a ProductVariant.
+A Plate is a first-class manufacturing plan/template for a printer build plate required as part of manufacturing a ProductVariant. V1 economics uses its planned values, not actual production results.
 
 A ProductionProfile may require one or more Plates.
 
@@ -351,21 +353,23 @@ Production Profile
    └── Plate C — accessories
 12.1 Plate Responsibilities
 
-A Plate owns manufacturing information associated with that print job, including:
+A Plate owns planned manufacturing information, including:
 
-Print duration.
-Usable output/yield.
-Filament usage.
+Planned print duration.
+Planned usable yield (plannedUsableUnits).
+Planned filament usage.
 
-The Plate is the natural location for these values because they describe the actual manufacturing batch.
+These values describe the manufacturing plan rather than an executed manufacturing batch.
 
 12.2 Plate Yield
 
-Plate yield represents usable manufactured output produced by the Plate.
+Plate yield represents the planned usable output of the Plate, named plannedUsableUnits. It does not represent actual units produced.
 
 Yield must remain distinct from ProductVariant.unitsPerSale.
 
 This distinction allows PrintForge to calculate how much printer capacity is required for each sale.
+
+For any per-sale calculation, plannedUsableUnits must be greater than zero. A plan with no usable output cannot produce a derived per-sale result. Zero or negative plannedUsableUnits is invalid domain data for these calculations and must not produce a fallback result of 0. Negative planned values must not be silently clamped.
 
 12.3 Do Not Model Every Printed Object Automatically
 
@@ -396,7 +400,7 @@ Other information needed to derive material cost.
 
 Filament represents the reusable material definition.
 
-Actual consumption belongs to FilamentUsage.
+Planned consumption belongs to FilamentUsage in V1.
 
 13.1 Future Filament Modeling
 
@@ -408,7 +412,7 @@ This richer filament catalog model is deferred. Full spool inventory and purchas
 
 14. Filament Usage
 
-A FilamentUsage represents the amount of a particular Filament consumed by a particular Plate.
+A FilamentUsage represents the planned amount of a particular Filament consumed by a particular Plate.
 
 Conceptually:
 
@@ -438,7 +442,7 @@ Plate
 
 14.1 V1 Material Cost
 
-Each filament usage used for costing tracks:
+Each filament usage used for V1 costing tracks planned consumption and its costing input:
 
 Material grams (materialGrams).
 Waste grams (wasteGrams).
@@ -661,12 +665,12 @@ Printer capacity is a first-class commercial concern because two products with s
 For a Plate:
 
 Printer Hours per Sale =
-(Total Plate Print Hours / Usable Units Produced)
+(Planned Plate Print Hours / Planned Usable Units)
 × Units Required per Sale
 
 For manufacturing configurations involving multiple required Plates, the applicable printer-time contribution from the required Plates must be combined.
 
-The system must safely handle zero usable output.
+The calculation uses plannedPlatePrintHours and plannedUsableUnits from the manufacturing plan. It must reject zero or negative plannedUsableUnits as invalid domain data, even when planned print hours or unitsPerSale is zero. Negative planned print hours or unitsPerSale are also invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print hours or zero unitsPerSale yields 0 printer hours per sale.
 
 Cash Contribution per printer hour is:
 
@@ -741,6 +745,12 @@ PrintForge V1 does not require a formal final-QC workflow for a Product to becom
 
 This does not prevent existing V1 safety or manufacturing concerns from affecting readiness.
 
+26.3 Actual Production Results
+
+Actual production results belong to a future PrintJob or equivalent execution/history concept, separate from the Plate planning definition. Future data may include actual print time, actual material consumed, actual usable units, failures, and waste.
+
+Actual production tracking is outside V1 and must not be required for V1 economics. Plate planning values must not be mixed with execution results.
+
 27. Domain Relationship Summary
 
 The primary relationships can be summarized as:
@@ -788,9 +798,9 @@ AI-generated Models are not automatically considered free of IP concerns.
 ProductVariant represents the actual sellable variation.
 unitsPerSale and Plate yield are separate concepts.
 A ProductionProfile may require multiple Plates.
-Plate owns print duration, usable output/yield, and FilamentUsage.
+Plate is a manufacturing plan/template and owns planned print duration, plannedUsableUnits, and planned FilamentUsage.
 Filament usage is one-to-many and must not use fixed filament slots.
-Manufacturing material belongs to actual production usage rather than Model.
+Manufacturing material belongs to planned production usage in V1 rather than Model.
 Not every printed object requires its own domain entity.
 ProductComponents are either PURCHASED or INTERNALLY_MANUFACTURED in V1.
 An internally manufactured ProductComponent references another ProductVariant, not a ProductionProfile.

@@ -65,48 +65,64 @@ describe("plate material cost", () => {
 describe("product economics", () => {
   it("calculates printer hours for a single unit per sale", () => {
     expect(calculatePrinterHoursPerSale({
-      totalPlatePrintHours: 12,
-      usableUnitsProduced: 8,
+      plannedPlatePrintHours: 12,
+      plannedUsableUnits: 8,
       unitsPerSale: 1
     })).toBe(1.5);
   });
 
   it("scales printer hours by units per sale separately from plate yield", () => {
     expect(calculatePrinterHoursPerSale({
-      totalPlatePrintHours: 12,
-      usableUnitsProduced: 8,
+      plannedPlatePrintHours: 12,
+      plannedUsableUnits: 8,
       unitsPerSale: 2
     })).toBe(3);
   });
 
   it("preserves fractional printer hours", () => {
     expect(calculatePrinterHoursPerSale({
-      totalPlatePrintHours: 2.5,
-      usableUnitsProduced: 3,
+      plannedPlatePrintHours: 2.5,
+      plannedUsableUnits: 3,
       unitsPerSale: 2
     })).toBeCloseTo(5 / 3);
   });
 
-  it.each([0, 12])("returns 0 for zero usable units with %s print hours", (totalPlatePrintHours) => {
-    expect(calculatePrinterHoursPerSale({
-      totalPlatePrintHours,
-      usableUnitsProduced: 0,
-      unitsPerSale: 2
-    })).toBe(0);
+  it.each([
+    { plannedPlatePrintHours: 12, plannedUsableUnits: 0, unitsPerSale: 2 },
+    { plannedPlatePrintHours: 0, plannedUsableUnits: 0, unitsPerSale: 2 },
+    { plannedPlatePrintHours: 12, plannedUsableUnits: 0, unitsPerSale: 0 },
+    { plannedPlatePrintHours: 0, plannedUsableUnits: 0, unitsPerSale: 0 },
+    { plannedPlatePrintHours: 12, plannedUsableUnits: -1, unitsPerSale: 2 },
+    { plannedPlatePrintHours: 0, plannedUsableUnits: -1, unitsPerSale: 0 }
+  ])("rejects invalid planned yield: $plannedPlatePrintHours hours, $plannedUsableUnits units, $unitsPerSale per sale", (input) => {
+    expect(() => calculatePrinterHoursPerSale(input)).toThrow(
+      new RangeError("plannedUsableUnits must be greater than zero")
+    );
   });
 
-  it("returns 0 for zero print hours", () => {
+  it.each([
+    { plannedPlatePrintHours: -1, plannedUsableUnits: 8, unitsPerSale: 2, field: "plannedPlatePrintHours" },
+    { plannedPlatePrintHours: -1, plannedUsableUnits: 8, unitsPerSale: 0, field: "plannedPlatePrintHours" },
+    { plannedPlatePrintHours: 12, plannedUsableUnits: 8, unitsPerSale: -1, field: "unitsPerSale" },
+    { plannedPlatePrintHours: 0, plannedUsableUnits: 8, unitsPerSale: -1, field: "unitsPerSale" }
+  ])("rejects negative $field with $plannedPlatePrintHours hours and $unitsPerSale per sale", ({ field, ...input }) => {
+    expect(() => calculatePrinterHoursPerSale(input)).toThrow(
+      new RangeError(`${field} must not be negative`)
+    );
+  });
+
+  it("returns 0 for zero planned print hours with positive planned yield", () => {
     expect(calculatePrinterHoursPerSale({
-      totalPlatePrintHours: 0,
-      usableUnitsProduced: 8,
+      plannedPlatePrintHours: 0,
+      plannedUsableUnits: 8,
       unitsPerSale: 2
     })).toBe(0);
   });
 
   it("returns 0 for zero units per sale", () => {
     expect(calculatePrinterHoursPerSale({
-      totalPlatePrintHours: 12,
-      usableUnitsProduced: 8,
+      plannedPlatePrintHours: 12,
+      plannedUsableUnits: 8,
       unitsPerSale: 0
     })).toBe(0);
   });
