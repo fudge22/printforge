@@ -70,6 +70,10 @@ General notes.
 
 Model-specific provenance and rights information are represented through related concepts rather than by treating the Model itself as manufacturing configuration.
 
+A Model description may come from user input, source/listing metadata, or other import context when available. STL files must not be assumed to contain a meaningful human-readable description. Source provenance remains the responsibility of SourceProfile.
+
+Triangle count may exist as technical metadata, but it is not an important V1 commercial-evaluation field. Useful descriptive and source context should take priority in the UI.
+
 3.2 Model Must Not Own Manufacturing Material
 
 A Model must not own the actual production filament or material used to manufacture a Product Variant.
@@ -84,6 +88,14 @@ With different slicer settings.
 With different plate layouts.
 
 Actual material usage therefore belongs to manufacturing configuration.
+
+3.3 Model Bounds and Production Footprint
+
+Dimensions derived from a model file describe its geometric bounds (bounding box), not the complete production footprint or required print-bed footprint.
+
+Supports, brim, manufacturing orientation, spacing, plate arrangement, and other slicer/manufacturing effects belong to ProductionProfile and Plate planning. Model bounds must not be treated as a substitute for that production information.
+
+User-facing terminology should communicate geometric bounds without implying that they equal the space required on a print bed.
 
 4. Source Profile
 
@@ -369,7 +381,7 @@ Yield must remain distinct from ProductVariant.unitsPerSale.
 
 This distinction allows PrintForge to calculate how much printer capacity is required for each sale.
 
-For any per-sale calculation, plannedUsableUnits must be greater than zero. A plan with no usable output cannot produce a derived per-sale result. Zero or negative plannedUsableUnits is invalid domain data for these calculations and must not produce a fallback result of 0. Negative planned values must not be silently clamped.
+For any per-unit or per-sale calculation, plannedUsableUnits must be greater than zero. A plan with no usable output cannot produce a derived per-unit or per-sale result. Zero or negative plannedUsableUnits is invalid domain data for these calculations and must not produce a fallback result of 0. Negative planned values must not be silently clamped. Zero planned print time is valid.
 
 12.3 Do Not Model Every Printed Object Automatically
 
@@ -628,6 +640,7 @@ Manufacturing cost.
 Cost per sale.
 Cash Contribution.
 Cash Contribution Margin.
+Printer hours per finished unit.
 Printer hours per sale.
 Cash Contribution per printer hour.
 Active labor hours per sale.
@@ -664,13 +677,17 @@ Printer capacity is a first-class commercial concern because two products with s
 
 For a Plate:
 
-Printer Hours per Sale =
-(Planned Plate Print Hours / Planned Usable Units)
-× Units Required per Sale
+Printer hours per finished unit =
+plannedPlatePrintHours / plannedUsableUnits
+
+Printer hours per sale =
+printerHoursPerFinishedUnit * unitsPerSale
+
+Printer hours per finished unit is a production metric representing printer capacity required to produce one planned usable finished unit. Printer hours per sale describes capacity for the quantity sold and remains useful for commercial economics, especially when one sale contains multiple units. These are separate derived metrics and must not be conflated.
 
 For manufacturing configurations involving multiple required Plates, the applicable printer-time contribution from the required Plates must be combined.
 
-The calculation uses plannedPlatePrintHours and plannedUsableUnits from the manufacturing plan. It must reject zero or negative plannedUsableUnits as invalid domain data, even when planned print hours or unitsPerSale is zero. Negative planned print hours or unitsPerSale are also invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print hours or zero unitsPerSale yields 0 printer hours per sale.
+Both metrics use plannedPlatePrintHours and plannedUsableUnits from the manufacturing plan. Per-unit and per-sale calculations must reject zero or negative plannedUsableUnits as invalid domain data, even when planned print hours or unitsPerSale is zero. Negative planned values, including planned print hours and unitsPerSale, are invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print hours is valid and yields 0 printer hours per finished unit and per sale. Zero unitsPerSale yields 0 printer hours per sale without changing the per-finished-unit metric.
 
 Cash Contribution per printer hour is:
 

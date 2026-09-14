@@ -555,6 +555,8 @@ Product and commercial evaluation information as the domain workflow grows.
 
 These are workflow directions rather than fixed page layouts.
 
+Workspace refinements should preserve meaning and intent without freezing exact labels, card layouts, or workspace composition. Prioritize useful descriptive/source context over low-value mesh statistics. Present model bounds distinctly from production footprint, and printer hours per finished unit distinctly from printer hours per sale, as defined in docs/domain-model.md and docs/requirements.md. Presentation choices must not relocate production information or authoritative calculations into the Model or React layer.
+
 The current UI mockups are design references only. They do not define required navigation, exact screen composition, styling, tabs, cards, or field placement.
 
 UI and Domain Boundaries

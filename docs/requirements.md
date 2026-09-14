@@ -134,21 +134,25 @@ Cash Contribution / Planned Selling Price
 
 When planned selling price is zero, the system must handle the calculation safely rather than producing an invalid result.
 
-7.2 Printer Hours per Sale
+7.2 Printer Hours per Finished Unit and per Sale
 
 Printer hours per sale should represent the amount of printer capacity required to produce the quantity needed for one sale.
 
 For a plate:
 
-Printer Hours per Sale =
-(Planned Plate Print Hours / Planned Usable Units)
-× Units Required per Sale
+Printer hours per finished unit =
+plannedPlatePrintHours / plannedUsableUnits
+
+Printer hours per sale =
+printerHoursPerFinishedUnit * unitsPerSale
+
+Printer hours per finished unit is a production metric representing printer capacity required to produce one planned usable finished unit. Printer hours per sale remains useful for commercial economics, especially when a sale contains multiple units. These are separate derived metrics and must not be conflated.
 
 Plate yield and units required per sale are different concepts and must remain distinct.
 
-V1 economics must use planned plate print time and planned usable yield (plannedUsableUnits), not actual production results. For any per-sale calculation, zero or negative plannedUsableUnits is invalid domain data because a plan with no usable output cannot provide a per-sale result. The calculation must reject it rather than return 0, even when planned print time or units per sale is zero.
+V1 economics must use planned plate print time and planned usable yield (plannedUsableUnits), not actual production results. For any per-unit or per-sale calculation, plannedUsableUnits must be greater than zero. Zero or negative plannedUsableUnits is invalid domain data because a plan with no usable output cannot provide a per-unit or per-sale result. The calculation must reject it rather than return 0, even when planned print time or units per sale is zero.
 
-Negative planned print time or units per sale is also invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print time or zero units per sale yields 0 printer hours per sale.
+Negative planned values, including planned print time and units per sale, are invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print time is valid and yields 0 printer hours per finished unit and per sale. Zero units per sale yields 0 printer hours per sale without changing the per-finished-unit metric.
 
 7.3 Cash Contribution per Printer Hour
 Cash Contribution per Printer Hour =
@@ -509,6 +513,18 @@ Commercial readiness and the reasons behind that assessment.
 
 The exact grouping, navigation, tabs, panels, and screen layout are intentionally flexible.
 
+Model Description and Technical Metadata
+
+The UI should prioritize useful descriptive and source context over low-value mesh statistics such as triangle count. Triangle count may exist as technical metadata, but it is not an important V1 commercial-evaluation field.
+
+A Model description may come from user input, source/listing metadata, or other import context when available. Do not assume STL files contain a meaningful human-readable description.
+
+Model Dimensions
+
+Dimensions derived from a model file represent the model's geometric bounds (bounding box). They do not represent the complete production footprint. Supports, brim, orientation, spacing, plate arrangement, and other slicer/manufacturing effects belong to Production/Plate planning.
+
+User-facing terminology must avoid implying that model bounds equal the required print-bed footprint.
+
 Model and Product Distinction
 
 The user interface should preserve the distinction between a Model and a Product without requiring the user to understand the internal domain model.
@@ -555,6 +571,8 @@ Requirements describe user capabilities and domain meaning, not a fixed screen l
 
 UI implementation decisions should remain easy to change unless a specific interaction becomes a confirmed product requirement.
 
+These refinements document meaning and intent, not a final screen design. Exact labels, card layouts, and workspace composition remain flexible while preserving the distinctions between design information, production planning, and per-unit versus per-sale metrics.
+
 The guiding UX principle is:
 
 Start with the model, show what PrintForge knows, ask for what is missing, and progressively explain whether the resulting product appears commercially viable.
@@ -584,6 +602,10 @@ Add packaging or component costs.
 Review third-party intellectual-property concerns.
 Address safety concerns.
 Adjust planned selling price or production assumptions when economics appear weak.
+
+A later version may also suggest useful filament colors based on real-world examples, product category, visual conventions, or comparable products. For example, planters may commonly be shown in white, terracotta, or green tones.
+
+Color suggestions are future guidance only, not a V1 requirement. Do not introduce color-recommendation logic in V1; existing user-selected or preselected colors remain sufficient.
 
 Guidance should be derived from authoritative PrintForge domain information rather than from UI state alone.
 
