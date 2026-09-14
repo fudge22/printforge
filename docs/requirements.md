@@ -559,6 +559,8 @@ The guiding UX principle is:
 
 Start with the model, show what PrintForge knows, ask for what is missing, and progressively explain whether the resulting product appears commercially viable.
 
+The Model workspace should be capable of eventually presenting actionable next steps alongside missing information and readiness explanations.
+
 23. Future Guided Evaluation
 
 A future version of PrintForge should be able to guide a user from an imported 3D model toward a commercially sellable state.
