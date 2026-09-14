@@ -467,11 +467,58 @@ Model-Centered Entry Point
 
 Importing a 3D model is a primary entry point into PrintForge.
 
-The intended user experience begins with a model that the user is considering producing or selling. The user should be able to import a supported 3D model file, beginning with STL support, and have PrintForge create a Model from that file.
+The intended user experience begins with a model that the user is considering producing or selling. The user should be able to select a supported 3D model file, beginning with STL support, review its import information, and confirm creation of a Model from that file.
 
-After import, PrintForge should present information that can be determined from the model automatically and clearly identify information that still requires user input.
+Before confirming import, PrintForge should present information that can reliably be determined from the selected file and clearly identify information that still requires user input. After confirmation, the user proceeds to the Model workspace to continue the evaluation.
 
 The application should progressively build the commercial evaluation around the imported Model rather than requiring the user to understand or manually create the underlying domain hierarchy before beginning an evaluation.
+
+Model Import Review
+
+The intended V1 workflow is:
+
+Models → Import Model → choose STL → Review Import → confirm import → Model workspace
+
+Selecting an STL must not immediately create a fully accepted Model without review. Import means validating the supported file, extracting reliable file/model information, showing what PrintForge knows and what still requires user input, allowing review/editing of import-time metadata, and confirming creation of the Model.
+
+The review step should support:
+
+- Filename.
+- File size.
+- Geometric/model bounds.
+- Editable Model name.
+- Editable description.
+- Source information when known.
+- Creator information when known.
+- Commercial-use rights/review status, or an explicit not-reviewed state.
+- A confirm/import action.
+- A cancel/back action that leaves the import unconfirmed.
+
+The user should be able to provide or edit information that cannot be reliably inferred. Unknown source, creator, or rights information must be shown as unknown or not reviewed rather than inferred from the STL. Confirming import does not mean that commercial-use rights have been reviewed or that a product is ready to sell.
+
+STL import must not imply that it can reliably determine a useful commercial description, source/creator provenance, license or commercial-use permission, production settings, filament selection, print time, plate yield, selling price, or commercial readiness.
+
+Product pricing, filament selection, production setup, plate configuration, and economics configuration do not belong on the initial import-review step. They belong in the broader Model evaluation workspace after the Model exists.
+
+The import-review UX principle is:
+
+Show what PrintForge knows, ask for what is missing, and let the user confirm before progressing.
+
+Preserve this workflow while keeping exact labels, layout, and screen composition intentionally flexible.
+
+Future Import Review Extensions
+
+Later versions may enrich import review with:
+
+- Interactive 3D preview.
+- Source/listing metadata assistance.
+- Duplicate-model detection.
+- Richer validation warnings.
+- AI-assisted description suggestions.
+- Import-time guidance or recommendations.
+- Richer file-format support.
+
+These are future directions only and must not become V1 requirements. Basic validation of the supported file remains part of V1 import; richer warning and assistance capabilities are deferred.
 
 Model Library
 

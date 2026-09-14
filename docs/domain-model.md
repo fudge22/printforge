@@ -97,6 +97,16 @@ Supports, brim, manufacturing orientation, spacing, plate arrangement, and other
 
 User-facing terminology should communicate geometric bounds without implying that they equal the space required on a print bed.
 
+3.4 Model Import Acceptance
+
+Selecting an STL begins an import review; it does not immediately create a fully accepted Model. The user reviews reliable file/model information and may provide or edit import-time metadata before confirming creation of the Model. Canceling or going back leaves the import unconfirmed.
+
+Import validates the supported file and extracts reliable information such as filename, file size, and geometric bounds. It does not establish a useful commercial description, source/creator provenance, license or commercial-use permission, production settings, filament selection, print time, plate yield, selling price, or commercial readiness from the STL itself.
+
+Import confirmation accepts the Model, not a commercial-readiness or rights determination. Source and creator information remain provenance context; commercial-use review may explicitly remain not reviewed. The existing SourceProfile and ModelRightsReview responsibilities remain unchanged.
+
+Product pricing, manufacturing configuration, planned filament usage, and economics belong to their existing ProductVariant, ProductionProfile, and Plate context in the subsequent evaluation workspace, not to initial Model import metadata. The review workflow does not introduce a new domain entity or prescribe persistence for an unconfirmed selection.
+
 4. Source Profile
 
 A SourceProfile records useful information about how a Model was obtained or originally presented.

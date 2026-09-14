@@ -583,6 +583,16 @@ Business calculations and rules should continue to live in packages/domain where
 
 The UI may use friendlier labels than the domain model. For example, a domain property such as plannedUsableUnits may be presented to the user as "Usable pieces per plate." User-facing terminology does not require renaming an otherwise appropriate domain concept.
 
+Model Import Review Workflow
+
+V1 follows Models → Import Model → choose STL → Review Import → confirm import → Model workspace. File selection begins review rather than immediately creating a fully accepted Model. The review presents reliable file information and editable import-time metadata, with explicit confirmation and cancel/back actions, as specified in docs/requirements.md.
+
+The UI should distinguish information determined from the file from information supplied by the user or known source context. STL selection must not be treated as evidence of provenance, commercial-use permission, manufacturing configuration, or commercial readiness. Product pricing, filament selection, production setup, plate configuration, and economics configuration remain in the broader evaluation workspace after Model creation.
+
+Show what PrintForge knows, ask for what is missing, and let the user confirm before progressing. This workflow is intentional; exact labels, layout, and screen composition remain flexible.
+
+Interactive 3D preview, source/listing assistance, duplicate detection, richer validation warnings, AI-assisted descriptions, import-time recommendations, and richer file-format support are future directions, not V1 prerequisites. Basic supported-file validation remains part of V1. Do not build infrastructure solely for these future extensions.
+
 Initial Frontend Development
 
 The first frontend implementation may use representative sample data while the API, database, and STL import pipeline are still being developed.
