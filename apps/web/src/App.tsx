@@ -1,3 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
+import ModelWorkspace from './ModelWorkspace';
+
 // Display labels for the canonical readiness states in docs/domain-model.md.
 const readinessLabels = {
   BLOCKED: 'Blocked',
@@ -47,23 +50,54 @@ const sampleModels = [
 ] as const;
 
 export default function App() {
+  const [view, setView] = useState<'models' | 'workspace'>('models');
+  const mainRef = useRef<HTMLElement>(null);
+  const openWorkspaceRef = useRef<HTMLButtonElement>(null);
+  const navigationPending = useRef(false);
+
+  function navigate(nextView: 'models' | 'workspace') {
+    if (nextView === view) return;
+    navigationPending.current = true;
+    setView(nextView);
+  }
+
+  useEffect(() => {
+    document.title = view === 'models' ? 'Models | PrintForge' : 'Geometric planter | PrintForge';
+    if (navigationPending.current) {
+      if (view === 'workspace') mainRef.current?.focus();
+      else openWorkspaceRef.current?.focus();
+      navigationPending.current = false;
+    }
+  }, [view]);
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#models">Skip to content</a>
       <header className="app-header">
         <span className="brand">PrintForge</span>
         <nav aria-label="Main navigation">
-          <a href="#models" aria-current="page">Models</a>
+          <a href="#models" aria-current={view === 'models' ? 'page' : undefined} onClick={(event) => {
+            event.preventDefault();
+            navigate('models');
+          }}>Models</a>
           <button type="button" disabled>Products</button>
           <button type="button" disabled>Filaments</button>
         </nav>
       </header>
 
-      <main id="models" tabIndex={-1}>
+      <main id="models" tabIndex={-1} ref={mainRef} aria-labelledby="page-title">
+        {view === 'workspace' ? (
+          <ModelWorkspace
+            model={sampleModels[1]}
+            readinessLabel={readinessLabels[sampleModels[1].readinessStatus]}
+            onBack={() => navigate('models')}
+          />
+        ) : (
+        <>
         <div className="page-heading">
           <div>
             <p className="eyebrow">Your model library</p>
-            <h1>Models</h1>
+            <h1 id="page-title">Models</h1>
             <p>Explore the digital designs behind your next product.</p>
           </div>
           <button className="import-button" type="button" disabled aria-describedby="sample-note">
@@ -105,11 +139,18 @@ export default function App() {
                     </div>
                   </dl>
                   <p className="evaluation-note">{model.evaluationNote}</p>
+                  {model.id === 'planter' && (
+                    <button className="workspace-button" type="button" ref={openWorkspaceRef} onClick={() => navigate('workspace')}>
+                      Open Geometric Planter evaluation
+                    </button>
+                  )}
                 </div>
               </article>
             </li>
           ))}
         </ul>
+        </>
+        )}
       </main>
     </div>
   );

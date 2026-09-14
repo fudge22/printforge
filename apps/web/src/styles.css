@@ -53,9 +53,28 @@ h2 { margin: 0; font-size: 1.125rem; }
 .status-label[data-status="Needs Review"] { background: #fff0cd; color: #714b0c; }
 .model-details .evaluation-note { font-size: 0.875rem; }
 
+.workspace-button { margin-top: 1rem; padding: 0.65rem 0.85rem; border: 1px solid #244c40; border-radius: 6px; background: white; color: #244c40; font-weight: 600; cursor: pointer; }
+.workspace-button:hover { background: #e7eee8; }
+.back-button { margin: 0 0 1.5rem; }
+.workspace-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+.workspace-section { min-width: 0; padding: 1.5rem; background: white; border: 1px solid #dce2db; border-radius: 10px; overflow-wrap: anywhere; }
+.workspace-section p { color: #5d6962; font-size: 0.875rem; }
+.workspace-section p:last-child { margin-bottom: 0; }
+.workspace-preview { margin-top: 1rem; font-size: 0.875rem; letter-spacing: normal; border-radius: 6px; }
+.workspace-details { display: grid; gap: 0.85rem; margin: 1rem 0 0; font-size: 0.875rem; }
+.workspace-details dt { color: #5d6962; }
+.workspace-details dd { margin: 0.2rem 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.filament-list { list-style: none; padding: 0; margin: 0; }
+.filament-list li { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dce2db; }
+.filament-list h3 { margin: 0; font-size: 1rem; }
+.workspace-summary { display: grid; gap: 1.25rem; min-width: 0; }
+.next-steps { padding-left: 1.25rem; font-size: 0.875rem; }
+.next-steps li + li { margin-top: 0.75rem; }
+
 @media (max-width: 720px) {
   .app-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
   main { padding-top: 2rem; }
   .page-heading { flex-direction: column; align-items: flex-start; }
   .model-grid { grid-template-columns: 1fr; }
+  .workspace-grid { grid-template-columns: 1fr; }
 }
