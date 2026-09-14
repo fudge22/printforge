@@ -43,6 +43,15 @@ h1 { margin: 0.3rem 0; font-size: 2.25rem; letter-spacing: -0.04em; }
 h2 { margin: 0; font-size: 1.125rem; }
 .model-details p { color: #5d6962; margin: 0.65rem 0 0; }
 .model-details .filename { margin-top: 1.5rem; font-size: 0.8rem; overflow-wrap: anywhere; }
+.snapshot-heading { margin: 1.25rem 0 0; padding-top: 1.25rem; border-top: 1px solid #dce2db; font-size: 0.875rem; }
+.evaluation-snapshot { display: grid; gap: 1rem; margin: 1rem 0; }
+.evaluation-snapshot > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 0.75rem; }
+.evaluation-snapshot dt { color: #5d6962; font-size: 0.875rem; }
+.evaluation-snapshot dd { margin: 0; font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.status-label { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 4px; background: #edf0ed; color: #48534c; }
+.status-label[data-status="Ready"] { background: #e7eee8; color: #244c40; }
+.status-label[data-status="Needs Review"] { background: #fff0cd; color: #714b0c; }
+.model-details .evaluation-note { font-size: 0.875rem; }
 
 @media (max-width: 720px) {
   .app-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
