@@ -2,6 +2,7 @@ type ModelWorkspaceProps = {
   model: {
     name: string;
     filename: string;
+    description: string;
     readinessStatus: 'BLOCKED' | 'REVIEW_REQUIRED' | 'QUESTIONABLE' | 'PROMISING' | 'READY';
     productionSetupStatus: string;
     materialCostPerSale: string;
@@ -44,8 +45,9 @@ export default function ModelWorkspace({ model, readinessLabel, onBack }: ModelW
           <dl className="workspace-details">
             <div><dt>Model name</dt><dd>{model.name}</dd></div>
             <div><dt>Filename</dt><dd>{model.filename}</dd></div>
-            <div><dt>File information</dt><dd>STL · 2.4 MB · 48,000 triangles</dd></div>
-            <div><dt>Design dimensions</dt><dd>100 × 100 × 90 mm (sample)</dd></div>
+            <div><dt>Description</dt><dd>{model.description}</dd></div>
+            <div><dt>File information</dt><dd>STL · 2.4 MB</dd></div>
+            <div><dt>Model bounds</dt><dd>100 × 100 × 90 mm (sample geometric bounds)</dd></div>
             <div><dt>Source / creator</dt><dd>Creator download / Studio Fern (sample)</dd></div>
             <div><dt>Commercial-use rights</dt><dd><span className="status-label" data-status="Needs Review">Needs Review</span></dd></div>
           </dl>
@@ -73,6 +75,7 @@ export default function ModelWorkspace({ model, readinessLabel, onBack }: ModelW
             <div><dt>Plate</dt><dd>Plate 1 · Two complete planters</dd></div>
             <div><dt>Planned print time per plate</dt><dd>7.6 hours</dd></div>
             <div><dt>Planned usable units per plate</dt><dd>2 planters</dd></div>
+            <div><dt>Printer hours per finished unit</dt><dd>3.8 hours</dd></div>
           </dl>
         </section>
 
