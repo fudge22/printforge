@@ -5,6 +5,7 @@ import {
   calculateMargin,
   calculateMaterialCostPerSale,
   calculatePlateMaterialCost,
+  calculatePrinterHoursPerFinishedUnit,
   calculatePrinterHoursPerSale,
   type ProductEconomicsInput
 } from "../src/economics.js";
@@ -105,7 +106,55 @@ describe("material cost per sale", () => {
   });
 });
 
+describe("printer hours per finished unit", () => {
+  it("calculates printer capacity for one planned usable finished unit", () => {
+    expect(calculatePrinterHoursPerFinishedUnit({
+      plannedPlatePrintHours: 12,
+      plannedUsableUnits: 8
+    })).toBe(1.5);
+  });
+
+  it("preserves fractional printer hours without rounding", () => {
+    expect(calculatePrinterHoursPerFinishedUnit({
+      plannedPlatePrintHours: 2.5,
+      plannedUsableUnits: 3
+    })).toBeCloseTo(5 / 6, 10);
+  });
+
+  it("returns 0 for zero planned print time with positive yield", () => {
+    expect(calculatePrinterHoursPerFinishedUnit({
+      plannedPlatePrintHours: 0,
+      plannedUsableUnits: 8
+    })).toBe(0);
+  });
+
+  it.each([
+    { plannedPlatePrintHours: 12, plannedUsableUnits: 0 },
+    { plannedPlatePrintHours: 0, plannedUsableUnits: 0 },
+    { plannedPlatePrintHours: 12, plannedUsableUnits: -1 },
+    { plannedPlatePrintHours: 0, plannedUsableUnits: -1 }
+  ])("rejects invalid yield: $plannedPlatePrintHours hours, $plannedUsableUnits units", (input) => {
+    expect(() => calculatePrinterHoursPerFinishedUnit(input)).toThrow(
+      new RangeError("plannedUsableUnits must be greater than zero")
+    );
+  });
+
+  it("rejects negative planned print time", () => {
+    expect(() => calculatePrinterHoursPerFinishedUnit({
+      plannedPlatePrintHours: -1,
+      plannedUsableUnits: 8
+    })).toThrow(new RangeError("plannedPlatePrintHours must not be negative"));
+  });
+});
+
 describe("product economics", () => {
+  it.each([
+    { plannedPlatePrintHours: -1, plannedUsableUnits: 0, unitsPerSale: -1, message: "plannedUsableUnits must be greater than zero" },
+    { plannedPlatePrintHours: -1, plannedUsableUnits: 8, unitsPerSale: -1, message: "plannedPlatePrintHours must not be negative" }
+  ])("preserves validation priority: $message", ({ message, ...input }) => {
+    expect(() => calculatePrinterHoursPerSale(input)).toThrow(new RangeError(message));
+  });
+
   it("calculates printer hours for a single unit per sale", () => {
     expect(calculatePrinterHoursPerSale({
       plannedPlatePrintHours: 12,

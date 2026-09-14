@@ -4,6 +4,11 @@ export interface ProductEconomicsInput {
   printerHoursPerSale: number;
 }
 
+export interface PrinterHoursPerFinishedUnitInput {
+  plannedPlatePrintHours: number;
+  plannedUsableUnits: number;
+}
+
 export interface PrinterHoursPerSaleInput {
   plannedPlatePrintHours: number;
   plannedUsableUnits: number;
@@ -60,8 +65,8 @@ export function calculatePlateMaterialCost(
   return total;
 }
 
-export function calculatePrinterHoursPerSale(
-  input: PrinterHoursPerSaleInput
+export function calculatePrinterHoursPerFinishedUnit(
+  input: PrinterHoursPerFinishedUnitInput
 ): number {
   if (input.plannedUsableUnits <= 0) {
     throw new RangeError("plannedUsableUnits must be greater than zero");
@@ -69,11 +74,20 @@ export function calculatePrinterHoursPerSale(
   if (input.plannedPlatePrintHours < 0) {
     throw new RangeError("plannedPlatePrintHours must not be negative");
   }
+
+  return input.plannedPlatePrintHours / input.plannedUsableUnits;
+}
+
+export function calculatePrinterHoursPerSale(
+  input: PrinterHoursPerSaleInput
+): number {
+  const printerHoursPerFinishedUnit = calculatePrinterHoursPerFinishedUnit(input);
+
   if (input.unitsPerSale < 0) {
     throw new RangeError("unitsPerSale must not be negative");
   }
 
-  return (input.plannedPlatePrintHours / input.plannedUsableUnits) * input.unitsPerSale;
+  return printerHoursPerFinishedUnit * input.unitsPerSale;
 }
 
 export function calculateCashContribution(
