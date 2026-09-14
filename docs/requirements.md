@@ -558,3 +558,31 @@ UI implementation decisions should remain easy to change unless a specific inter
 The guiding UX principle is:
 
 Start with the model, show what PrintForge knows, ask for what is missing, and progressively explain whether the resulting product appears commercially viable.
+
+23. Future Guided Evaluation
+
+A future version of PrintForge should be able to guide a user from an imported 3D model toward a commercially sellable state.
+
+The long-term workflow may include:
+
+Import a supported 3D model such as an STL.
+Analyze information that can be determined automatically.
+Identify required or useful information that is missing.
+Evaluate commercial, manufacturing, economic, rights, intellectual-property, and safety concerns.
+Present actionable suggestions or a prioritized to-do list.
+Update the guidance as the user provides additional information or resolves concerns.
+
+Examples of future guidance may include:
+
+Review the model's commercial-use rights.
+Configure a Production Profile.
+Add planned plate yield and print time.
+Add filament usage.
+Add packaging or component costs.
+Review third-party intellectual-property concerns.
+Address safety concerns.
+Adjust planned selling price or production assumptions when economics appear weak.
+
+Guidance should be derived from authoritative PrintForge domain information rather than from UI state alone.
+
+This capability is intentionally deferred beyond V1. V1 should focus on collecting reliable domain information, calculating economics, and producing explainable readiness results in ways that can support future guided recommendations without requiring a recommendation engine today.
