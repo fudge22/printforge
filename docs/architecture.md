@@ -614,7 +614,13 @@ User selects STL
 
 Review Import displays metadata returned by the backend rather than deriving authoritative geometry information in React. Confirmation creates the Model; it does not imply commercial readiness or rights approval.
 
-This flow establishes responsibilities only. Permanent storage of the original STL, storage provider and filesystem/cloud implementation, exact API endpoints and request schemas, upload size limits, multipart details, and asynchronous processing architecture remain separate, undecided design questions. Do not introduce infrastructure solely for future capabilities.
+Confirmed import retains the original uploaded STL unchanged as the Model's source asset. The binary is stored as a file/object asset rather than inside ordinary relational business columns; PostgreSQL stores the Model record, its asset reference, and relevant file metadata. The exact storage provider or mechanism, storage layout, provider retention details, signed URL implementation, exact API endpoints and request schemas, upload size limits, multipart details, and asynchronous processing architecture remain undecided. Do not introduce infrastructure solely for future capabilities.
+
+V1 edits Model metadata and related business information, not STL geometry. Model name, description, notes, source/creator information, and rights-review information remain editable independently of the immutable asset. Original filename, file size, file type, model bounds, and other file-derived metadata remain authoritative file information rather than casually editable business facts; presentation formatting is allowed.
+
+PrintForge does not edit, rewrite, or overwrite STL geometry in V1. No STL versioning, revision history, file version tables, or overwrite workflow is required. A meaningfully different STL is imported as a separate Model. Deleting a Model may eventually remove its associated asset according to application deletion behavior, without introducing recovery, archive, soft-delete, retention-period, or file-history systems.
+
+A future handoff may open the preserved original STL in Bambu Studio or another slicer. PrintForge manages and evaluates the Model and retains the original source; the slicer owns slicing and printer-job execution. This handoff is not a V1 integration requirement.
 
 The UI should distinguish information determined from the file from information supplied by the user or known source context. STL selection must not be treated as evidence of provenance, commercial-use permission, manufacturing configuration, or commercial readiness. Product pricing, filament selection, production setup, plate configuration, and economics configuration remain in the broader evaluation workspace after Model creation.
 

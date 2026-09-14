@@ -88,7 +88,15 @@ notes
 created_at
 updated_at
 
-Optional model-file or reference information may be added when needed by the first workflow.
+For confirmed STL imports, PostgreSQL stores the Model record plus a reference to the retained original STL asset and relevant file metadata. The binary STL belongs in file/object asset storage, not ordinary relational business columns. The exact storage provider/mechanism and field representation remain undecided.
+
+Relevant file metadata includes original filename, file size, file type, geometric/model bounds, and other information derived directly from server-side parsing of the immutable STL. This is authoritative file metadata associated with the retained source, not independently editable business state. It may be formatted for display. Recording this source-associated metadata does not change the rule against persisting independent mutable economic calculations.
+
+Model name, description, and notes remain editable. Source and creator information remain in source_profiles, and rights-review information remains in model_rights_reviews. Updating these records must not imply that the original STL or its authoritative file metadata changed.
+
+The original STL is retained unchanged after confirmed import. V1 does not require file version tables, STL revision history, overwrite workflows, or geometry editing. A meaningfully different STL is imported as a separate Model.
+
+Deleting a Model may eventually remove the associated asset according to application deletion behavior while preserving referential-integrity expectations. No recovery, archive, soft-delete, retention-period, or file-history system is specified by this decision.
 
 Relationships
 models

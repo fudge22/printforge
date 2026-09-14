@@ -510,6 +510,26 @@ Show what PrintForge knows, ask for what is missing, and let the user confirm be
 
 Preserve this workflow while keeping exact labels, layout, and screen composition intentionally flexible.
 
+Original STL and Editable Metadata
+
+After confirmed import, PrintForge retains the original uploaded STL unchanged as the source file associated with the Model. V1 does not edit, rewrite, or overwrite STL geometry.
+
+Model metadata remains editable independently of that immutable source asset. Model name, description, notes, source information, creator information, rights-review information, and other user-entered or reviewed metadata may be updated without implying that the source STL changed.
+
+Original filename, file size, file type, geometric/model bounds, and other metadata derived directly from parsing the immutable STL are authoritative file metadata. They may be reformatted for presentation, but should not be casually editable as user-entered business facts. Editing a Model's name does not rename its recorded original filename.
+
+V1 does not require STL versioning because PrintForge updates metadata and related business information rather than the underlying geometry. A meaningfully different STL should be imported as a separate Model. STL revision history, file version tables, overwrite workflows, and geometry editing are outside V1.
+
+The binary STL is stored as a file/object asset rather than inside ordinary relational business columns. PostgreSQL stores the Model record, a reference to the stored STL, and relevant file metadata. The exact storage provider and mechanism remain undecided.
+
+Keep the lifecycle simple: Model metadata can be edited, the associated original STL is immutable, and deleting a Model may eventually remove its file asset according to application deletion behavior. This does not establish recovery, archive, soft-delete, retention-period, or file-history systems.
+
+The source asset, editable Model metadata, authoritative file metadata, and Product/Production/economics data remain distinct. Product, ProductionProfile, Plate, FilamentUsage, and economics concerns must not move into the Model record.
+
+Future Slicer Handoff
+
+A later version may let the user hand the preserved original STL off to Bambu Studio or another slicer. PrintForge manages and evaluates the Model and retains its original source STL; the slicer handles slicing and printer-job execution. This is a future direction only, not a V1 integration requirement.
+
 Future Import Review Extensions
 
 Later versions may enrich import review with:

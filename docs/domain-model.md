@@ -109,6 +109,20 @@ Import confirmation accepts the Model, not a commercial-readiness or rights dete
 
 Product pricing, manufacturing configuration, planned filament usage, and economics belong to their existing ProductVariant, ProductionProfile, and Plate context in the subsequent evaluation workspace, not to initial Model import metadata. The review workflow does not introduce a new domain entity or prescribe persistence for an unconfirmed selection.
 
+3.5 Immutable Source Asset and Editable Metadata
+
+After confirmed import, the Model is associated with the original uploaded STL, retained unchanged as an immutable source asset. PrintForge does not edit, rewrite, or overwrite STL geometry in V1.
+
+The Model and its related metadata remain editable: name, description, notes, source and creator information, rights-review information, and other user-entered or reviewed metadata may change without changing the source STL. SourceProfile and ModelRightsReview retain their existing responsibilities.
+
+Original filename, file size, file type, geometric/model bounds, and other metadata derived directly from parsing the stored STL are authoritative file metadata, distinct from editable business metadata. Presentation formatting is allowed; these values should not be casually edited as user-entered facts.
+
+V1 needs no STL versioning because edits concern metadata and business information, not geometry. A meaningfully different STL is imported as a separate Model, not an in-place revision. No STL revision history, file version entities, overwrite workflow, or geometry-editing concept is introduced.
+
+Deleting a Model may eventually remove its associated source asset according to application deletion behavior. Immutability means the retained original is not modified; it does not prescribe a recovery, archive, soft-delete, retention-period, or file-history system.
+
+The immutable source asset, editable Model metadata, authoritative file metadata, and Product/Production/economics data remain separate. Product, ProductionProfile, Plate, FilamentUsage, and economic calculations keep their existing ownership and must not be folded into the Model record.
+
 4. Source Profile
 
 A SourceProfile records useful information about how a Model was obtained or originally presented.
