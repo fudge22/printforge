@@ -481,6 +481,10 @@ Models → Import Model → choose STL → Review Import → confirm import → 
 
 Selecting an STL must not immediately create a fully accepted Model without review. Import means validating the supported file, extracting reliable file/model information, showing what PrintForge knows and what still requires user input, allowing review/editing of import-time metadata, and confirming creation of the Model.
 
+For V1, the frontend sends the selected STL to the backend for supported-file validation, server-side geometry parsing, and authoritative metadata extraction, including geometric/model bounds. The backend returns import-review information for the frontend to display. The user supplies or edits appropriate import-time metadata, then the frontend submits confirmation and the backend creates the Model. Review Import must display backend-returned geometry information rather than independently deriving authoritative geometry in React. Browser-side STL parsing is not a V1 requirement.
+
+The frontend may collect input, transmit files, construct requests, format returned information, manage transient UI state, and provide basic form feedback. Formatting a returned byte count as a readable file size or formatting numeric values for display is allowed; authoritative validation and business decisions remain on the backend/domain side.
+
 The review step should support:
 
 - Filename.
@@ -519,6 +523,8 @@ Later versions may enrich import review with:
 - Richer file-format support.
 
 These are future directions only and must not become V1 requirements. Basic validation of the supported file remains part of V1 import; richer warning and assistance capabilities are deferred.
+
+Future browser-side parsing, visualization, or derived preview values may support presentation and responsiveness, but must not become authoritative domain state or replace server-side validation/calculation. Client-side STL parsing and 3D rendering are not V1 requirements.
 
 Model Library
 
@@ -607,6 +613,8 @@ Missing information should be communicated to the user rather than replaced with
 Responsive Calculations
 
 Derived economics should update from the current production and pricing inputs without requiring the user to manually initiate a separate calculation process.
+
+The backend/domain side remains authoritative for economics, readiness/business-rule evaluation, and other domain calculations and validations. React requests and displays those results, with presentation formatting and UI-level input handling as useful; it must not reproduce the calculations as a second source of truth.
 
 Where a calculation cannot be performed because required information is missing or invalid, the UI should communicate what is needed rather than presenting a misleading numeric result.
 

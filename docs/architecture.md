@@ -139,6 +139,18 @@ React displays result
 
 This prevents business rules from being duplicated between the UI and backend.
 
+5.1 Frontend and Backend Authority
+
+The frontend primarily owns presentation, user interaction, and formatting/collecting information for communication with the backend. It may collect input, select and transmit files, construct requests, display backend-returned information, perform presentation-only formatting, manage transient UI interaction state, and provide normal UI-level input handling or basic form feedback.
+
+For example, displaying a backend-returned byte count as a human-friendly file size or formatting an authoritative numeric value for display is presentation work. Such formatting and form feedback do not replace authoritative validation or make React the source of truth.
+
+The backend/domain side is authoritative for STL validation and geometry extraction, geometric/model bounds, economics calculations, readiness/business-rule evaluation, and other domain calculations and validations. React must not independently reproduce these operations as a second source of truth. API orchestration should remain thin, with business calculations and invariants in packages/domain where practical.
+
+For V1, STL geometry parsing and authoritative metadata extraction must happen server-side. Browser-side STL geometry parsing is not required.
+
+A later version may perform client-side work for purely presentational or responsiveness purposes, such as interactive 3D visualization. Any browser-side parsing or derived preview values must not become authoritative domain state or replace server-side validation/calculation. Client-side STL parsing and 3D rendering are not V1 requirements.
+
 6. Backend API
 
 Location:
@@ -586,6 +598,23 @@ The UI may use friendlier labels than the domain model. For example, a domain pr
 Model Import Review Workflow
 
 V1 follows Models → Import Model → choose STL → Review Import → confirm import → Model workspace. File selection begins review rather than immediately creating a fully accepted Model. The review presents reliable file information and editable import-time metadata, with explicit confirmation and cancel/back actions, as specified in docs/requirements.md.
+
+The conceptual responsibility flow is:
+
+User selects STL
+→ frontend sends the selected file to the backend
+→ backend validates the supported file
+→ backend parses the STL
+→ backend extracts authoritative model information such as geometric bounds
+→ backend returns import-review information
+→ frontend displays the returned information
+→ user supplies or edits appropriate import-time metadata
+→ frontend submits confirmation
+→ backend creates the Model
+
+Review Import displays metadata returned by the backend rather than deriving authoritative geometry information in React. Confirmation creates the Model; it does not imply commercial readiness or rights approval.
+
+This flow establishes responsibilities only. Permanent storage of the original STL, storage provider and filesystem/cloud implementation, exact API endpoints and request schemas, upload size limits, multipart details, and asynchronous processing architecture remain separate, undecided design questions. Do not introduce infrastructure solely for future capabilities.
 
 The UI should distinguish information determined from the file from information supplied by the user or known source context. STL selection must not be treated as evidence of provenance, commercial-use permission, manufacturing configuration, or commercial readiness. Product pricing, filament selection, production setup, plate configuration, and economics configuration remain in the broader evaluation workspace after Model creation.
 

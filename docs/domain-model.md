@@ -103,6 +103,8 @@ Selecting an STL begins an import review; it does not immediately create a fully
 
 Import validates the supported file and extracts reliable information such as filename, file size, and geometric bounds. It does not establish a useful commercial description, source/creator provenance, license or commercial-use permission, production settings, filament selection, print time, plate yield, selling price, or commercial readiness from the STL itself.
 
+In V1, supported-file validation, STL geometry parsing, and authoritative metadata extraction happen server-side. The frontend sends the selected file and displays backend-returned import-review information, including authoritative geometric/model bounds. It submits the user's confirmation to the backend, which creates the Model. React does not independently determine authoritative geometry.
+
 Import confirmation accepts the Model, not a commercial-readiness or rights determination. Source and creator information remain provenance context; commercial-use review may explicitly remain not reviewed. The existing SourceProfile and ModelRightsReview responsibilities remain unchanged.
 
 Product pricing, manufacturing configuration, planned filament usage, and economics belong to their existing ProductVariant, ProductionProfile, and Plate context in the subsequent evaluation workspace, not to initial Model import metadata. The review workflow does not introduce a new domain entity or prescribe persistence for an unconfirmed selection.
@@ -642,6 +644,8 @@ Market observations help inform judgment rather than replace it.
 21. Economics as Derived Domain Values
 
 Commercial metrics should generally be derived from underlying domain data rather than independently stored as mutable business state.
+
+The backend/domain side is authoritative for these calculations, readiness/business-rule evaluation, and other domain calculations and validations. React may format returned values and provide normal UI-level input handling, but must not independently reproduce authoritative calculations or business decisions. Future browser-side parsing or preview-derived values remain presentation-only and cannot replace server-side validation/calculation or become authoritative domain state.
 
 Important derived values include:
 
