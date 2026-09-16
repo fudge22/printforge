@@ -43,7 +43,7 @@ The diagram above therefore represents the conceptual journey rather than implyi
 
 3. Model
 
-A Model represents a digital 3D model that may be used as part of a product.
+A Model represents an imported printable design source that may be used as part of a product. It is not defined as exactly one STL file or one mesh object: a supported source may contain one or more geometry objects. V1 supports STL and 3MF as original source formats without prescribing an internal 3MF object/component hierarchy.
 
 Examples include:
 
@@ -99,13 +99,13 @@ User-facing terminology should communicate geometric bounds without implying tha
 
 3.4 Model Import Acceptance
 
-Selecting one or more STLs begins transient frontend uploads; selection and incomplete transfer do not create Models or backend ImportDrafts. After the backend acknowledges complete receipt of each STL, a persistent ImportDraft represents that unconfirmed source asset independently of other files. An ImportDraft is not a Model and survives navigation, refresh, browser closure, and normal absence. The user reviews reliable file/model information and may provide or edit import-time metadata before confirming creation of a Model. Leaving review keeps the draft unconfirmed; discarding explicitly removes it and its unclaimed source asset according to application lifecycle behavior.
+Selecting one or more STL and/or 3MF files begins transient frontend uploads; selection and incomplete transfer do not create Models or backend ImportDrafts. After the backend acknowledges complete receipt of each source file, a persistent ImportDraft represents that unconfirmed original source asset independently of other files. An ImportDraft is not a Model and survives navigation, refresh, browser closure, and normal absence. The user reviews reliable file/model information and may provide or edit persistent import-time working metadata before confirming creation of a Model. Leaving review keeps the draft unconfirmed; discarding explicitly removes it and its unclaimed source asset according to application lifecycle behavior.
 
-Import validates the supported file and extracts reliable information such as filename, file size, and geometric bounds. It does not establish a useful commercial description, source/creator provenance, license or commercial-use permission, production settings, filament selection, print time, plate yield, selling price, or commercial readiness from the STL itself.
+Import validates that the STL or 3MF is supported, parseable, and contains usable model information for PrintForge. Extraction is format-aware: take as much reliable information as practical from the original format, then determine what is useful to PrintForge. STL is generally geometry-oriented and may have little useful descriptive metadata. 3MF may contain title, description, creator, license, multiple objects, units, previews, project metadata, print/profile, filament, plate, or other information. None is guaranteed, and V1 does not yet prescribe a final extraction field list or require persisting/displaying every possible field. Embedded information does not establish rights approval, commercial readiness, production readiness, printability, or authoritative manufacturing configuration.
 
 The ImportDraft lifecycle has backend states PROCESSING, READY_FOR_REVIEW, and FAILED. After complete upload acknowledgment, processing leads to READY_FOR_REVIEW or FAILED. A failed draft remains visible. Reviewing a ready draft is UI state, not an IN_REVIEW backend state. Confirmation creates the Model and consumes/removes the ImportDraft from Imports. Abandoned drafts and unclaimed assets require eventual cleanup under an explicit retention policy whose duration is undecided; partial uploads require separate cleanup. Retry semantics remain undecided.
 
-In V1, supported-file validation, STL geometry parsing, and authoritative metadata extraction happen server-side. The frontend displays backend-returned import-review information, including authoritative geometric/model bounds, and submits confirmation to the backend. React does not independently determine authoritative geometry.
+In V1, supported-file validation, STL/3MF parsing, geometry extraction, metadata extraction, and domain validation happen on the backend/domain side. The frontend displays backend-returned import-review information and submits confirmation to the backend. React does not independently determine authoritative geometry or metadata. PrintForge need not duplicate a slicer's detailed mesh repair, slicing, support generation, orientation, or actual printability validation, nor invoke Bambu Studio during import.
 
 Import confirmation accepts the Model, not a commercial-readiness or rights determination. Source and creator information remain provenance context; commercial-use review may explicitly remain not reviewed. The existing SourceProfile and ModelRightsReview responsibilities remain unchanged.
 
@@ -113,13 +113,13 @@ Product pricing, manufacturing configuration, planned filament usage, and econom
 
 3.5 Immutable Source Asset and Editable Metadata
 
-The complete uploaded STL is an unconfirmed source asset while its ImportDraft exists. On confirmation, that same original STL becomes associated with the Model without re-upload or regeneration; changing ownership or reference need not physically move or copy the binary. It is retained unchanged. PrintForge does not edit, rewrite, or overwrite STL geometry in V1.
+The complete uploaded STL or 3MF is an unconfirmed original source asset while its ImportDraft exists. On confirmation, that same original file becomes long-term Model source data without re-upload, regeneration, or conversion; changing ownership or reference need not physically move or copy the binary. PrintForge retains it unchanged and does not make a converted STL the authoritative original of a 3MF import.
 
-The Model and its related metadata remain editable: name, description, notes, source and creator information, rights-review information, and other user-entered or reviewed metadata may change without changing the source STL. SourceProfile and ModelRightsReview retain their existing responsibilities.
+The Model and its related metadata remain editable: name, description, notes, source and creator information, rights-review information, and other user-entered or reviewed metadata may change without changing the original source asset. SourceProfile and ModelRightsReview retain their existing responsibilities.
 
-Original filename, file size, file type, geometric/model bounds, and other metadata derived directly from parsing the stored STL are authoritative file metadata, distinct from editable business metadata. Presentation formatting is allowed; these values should not be casually edited as user-entered facts.
+Original filename, source format, file size, storage reference, geometric/model bounds where derivable, and other metadata extracted from the original file are authoritative source/file information, distinct from editable business metadata. V1 source format is constrained to STL or 3MF. Presentation formatting is allowed; these values should not be casually edited as user-entered facts.
 
-V1 needs no STL versioning because edits concern metadata and business information, not geometry. A meaningfully different STL is imported as a separate Model, not an in-place revision. No STL revision history, file version entities, overwrite workflow, or geometry-editing concept is introduced.
+V1 needs no source-file versioning because edits concern metadata and business information, not the original file. A meaningfully different source file is imported as a separate Model, not an in-place revision. No source-file revision history, file version entities, overwrite workflow, or geometry-editing concept is introduced.
 
 Deleting a Model may eventually remove its associated source asset according to application deletion behavior. Immutability means the retained original is not modified; it does not prescribe a recovery, archive, soft-delete, retention-period, or file-history system.
 

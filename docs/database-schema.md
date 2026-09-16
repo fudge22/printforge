@@ -89,13 +89,13 @@ notes
 created_at
 updated_at
 
-For confirmed STL imports, PostgreSQL stores the Model record plus a reference to the same retained original STL asset previously associated with the ImportDraft and relevant file metadata. The binary STL belongs in file/object asset storage, not ordinary relational business columns. The exact storage provider/mechanism and field representation remain undecided.
+For confirmed STL or 3MF imports, PostgreSQL stores the Model record plus a reference to the same retained original source asset previously associated with the ImportDraft and relevant file metadata. The original binary belongs in file/object asset storage, not ordinary relational business columns. The exact storage provider/mechanism and field representation remain undecided.
 
-Relevant file metadata includes original filename, file size, file type, geometric/model bounds, and other information derived directly from server-side parsing of the immutable STL. This is authoritative file metadata associated with the retained source, not independently editable business state. It may be formatted for display. Recording this source-associated metadata does not change the rule against persisting independent mutable economic calculations.
+Relevant source information includes original filename, source format (STL or 3MF in V1), file size, storage reference, geometric/model bounds where derivable, and other useful information extracted from the immutable original file. Formats need not yield identical metadata. Exact extracted fields and their persistence are undecided. Authoritative source/file metadata is not independently editable business state; it may be formatted for display. Recording it does not change the rule against persisting independent mutable economic calculations.
 
-Model name, description, and notes remain editable. Source and creator information remain in source_profiles, and rights-review information remains in model_rights_reviews. Updating these records must not imply that the original STL or its authoritative file metadata changed.
+Model name, description, and notes remain editable. Source and creator information remain in source_profiles, and rights-review information remains in model_rights_reviews. Updating these records must not imply that the original source asset or its authoritative file metadata changed.
 
-The original STL is retained unchanged after confirmed import. V1 does not require file version tables, STL revision history, overwrite workflows, or geometry editing. A meaningfully different STL is imported as a separate Model.
+The original STL or 3MF is retained unchanged after confirmed import; a 3MF is not converted into an STL as its authoritative original. V1 does not require file version tables, source-file revision history, overwrite workflows, or geometry editing. A meaningfully different source file is imported as a separate Model.
 
 Deleting a Model may eventually remove the associated asset according to application deletion behavior while preserving referential-integrity expectations. No recovery, archive, soft-delete, retention-period, or file-history system is specified by this decision.
 
@@ -112,11 +112,11 @@ A Model represents the digital design, not manufacturing truth.
 
 5.1 import_drafts
 
-Persists backend-owned pre-Model state after successful receipt of a complete STL. An ImportDraft is separate from models and does not appear in the confirmed Models collection. A browser upload in progress is transient frontend state, not an ImportDraft.
+Persists backend-owned pre-Model state after successful receipt of a complete STL or 3MF. An ImportDraft is separate from models and does not appear in the confirmed Models collection. Each selected source file has an independent draft after upload; a browser upload in progress is transient frontend state, not an ImportDraft.
 
-Conceptual persisted information includes an identifier, lifecycle status (PROCESSING, READY_FOR_REVIEW, or FAILED), a reference to the unchanged unconfirmed STL asset, and relevant original-file and processing/review information. Exact fields and storage representation remain implementation decisions. The binary belongs in file/object storage rather than ordinary relational business columns. Multiple drafts are independent; a failed draft remains available for the user to understand the failure.
+Conceptual persisted information includes an identifier, lifecycle status (PROCESSING, READY_FOR_REVIEW, or FAILED), a reference to the unchanged unconfirmed original source asset, its original filename, source format and file size, and relevant processing/review working information. Exact fields and storage representation remain implementation decisions. The binary belongs in file/object storage rather than ordinary relational business columns. Multiple drafts are independent; a failed draft remains available for the user to understand the failure.
 
-Confirmation creates a Model associated with the same original STL and consumes/removes the draft. This transition must preserve asset ownership/reference integrity without requiring a binary copy or re-upload. Discard removes the draft and its unclaimed asset according to application lifecycle behavior. An explicit retention policy must eventually clean up abandoned drafts and unclaimed assets; its duration is undecided. Cleanup of incomplete uploads is separate. No archive, recovery, soft-delete, or long-term import-history model is implied.
+Confirmation creates a Model associated with the same original source asset and consumes/removes the draft. This transition must preserve asset ownership/reference integrity without requiring a binary copy, conversion, or re-upload. Discard removes the draft and its unclaimed asset according to application lifecycle behavior. An explicit retention policy must eventually clean up abandoned drafts and unclaimed assets; its duration is undecided. Cleanup of incomplete uploads is separate. No archive, recovery, soft-delete, or long-term import-history model is implied.
 
 6. source_profiles
 
