@@ -597,24 +597,29 @@ The UI may use friendlier labels than the domain model. For example, a domain pr
 
 Model Import Review Workflow
 
-V1 follows Models → Import Model → choose STL → Review Import → confirm import → Model workspace. File selection begins review rather than immediately creating a fully accepted Model. The review presents reliable file information and editable import-time metadata, with explicit confirmation and cancel/back actions, as specified in docs/requirements.md.
+V1 follows select STL(s) → upload → backend processing → ready for review → review → confirm → Model workspace. Imports is a separate area for unconfirmed files; the Models collection contains confirmed Models only. Each file is tracked independently so one slow or failed import does not obscure the others. The review presents reliable file information and editable import-time metadata, with explicit confirmation and the ability to leave it unconfirmed, as specified in docs/requirements.md.
 
 The conceptual responsibility flow is:
 
-User selects STL
-→ frontend sends the selected file to the backend
-→ backend validates the supported file
-→ backend parses the STL
-→ backend extracts authoritative model information such as geometric bounds
-→ backend returns import-review information
-→ frontend displays the returned information
+User selects STL(s)
+→ frontend tracks each active byte transfer as a transient upload task
+→ backend acknowledges complete receipt and owns a persistent ImportDraft per file
+→ backend processes supported-file validation, STL parsing, and authoritative metadata extraction
+→ each ImportDraft becomes READY_FOR_REVIEW or FAILED
+→ frontend reflects backend changes automatically and presents ready drafts for review
 → user supplies or edits appropriate import-time metadata
 → frontend submits confirmation
-→ backend creates the Model
+→ backend creates the Model and consumes/removes the ImportDraft
 
-Review Import displays metadata returned by the backend rather than deriving authoritative geometry information in React. Confirmation creates the Model; it does not imply commercial readiness or rights approval.
+ImportDraft backend states are PROCESSING, READY_FOR_REVIEW, and FAILED; opening review is UI state, not an IN_REVIEW backend state. Failed drafts remain visible. Ready drafts can be confirmed or discarded; discard removes the draft and its unclaimed asset according to application lifecycle behavior. Retry semantics remain undecided. Drafts survive navigation, refresh, browser closure, and normal absence. Backend processing continues after complete upload acknowledgment without keeping the browser open or remaining on Imports. The Imports view updates automatically without manual application reload; its synchronization mechanism remains undecided.
 
-Confirmed import retains the original uploaded STL unchanged as the Model's source asset. The binary is stored as a file/object asset rather than inside ordinary relational business columns; PostgreSQL stores the Model record, its asset reference, and relevant file metadata. The exact storage provider or mechanism, storage layout, provider retention details, signed URL implementation, exact API endpoints and request schemas, upload size limits, multipart details, and asynchronous processing architecture remain undecided. Do not introduce infrastructure solely for future capabilities.
+The Imports UI distinguishes active frontend uploads, backend processing, ready drafts, and failures without fixing layout or section labels. An active upload may show actual byte-transfer progress and percentage when meaningful, plus waiting, failure, retry, or remove state as appropriate. Backend processing uses status or indeterminate progress unless the backend supplies meaningful real progress; invented percentages are not shown. Users receive clear feedback that leaving during upload may interrupt it, and the application makes a reasonable effort to warn before leaving while uploads are active when the platform permits. Interrupted/partial upload data must not be retained indefinitely. Resumable or chunked upload is not required in V1.
+
+Review Import displays metadata returned by the backend rather than deriving authoritative geometry information in React. Transfer percentage is frontend transport state, not an authoritative domain calculation. Confirmation creates the Model; it does not imply commercial readiness, production readiness, or rights approval.
+
+The ImportDraft holds the unchanged uploaded STL as an unconfirmed source asset. Confirmation associates the same original STL with the Model without re-upload or regeneration; a reference or ownership change need not move or copy the binary. The binary is stored as a file/object asset rather than inside ordinary relational business columns; PostgreSQL persists draft state and asset reference, then the Model record, its asset reference, and relevant file metadata. Abandoned drafts and their unclaimed assets require eventual cleanup under an explicit retention policy, separate from partial-upload cleanup; the duration remains undecided. This does not establish archive, recovery, soft-delete, or long-term import history.
+
+Exact API endpoints and schemas, upload protocol and multipart implementation, concurrency, maximum file size, storage provider and key/layout, background job or worker technology, polling versus push updates, retention duration, and resumable-upload implementation remain undecided. Do not introduce infrastructure solely for future capabilities.
 
 V1 edits Model metadata and related business information, not STL geometry. Model name, description, notes, source/creator information, and rights-review information remain editable independently of the immutable asset. Original filename, file size, file type, model bounds, and other file-derived metadata remain authoritative file information rather than casually editable business facts; presentation formatting is allowed.
 

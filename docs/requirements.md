@@ -477,11 +477,21 @@ Model Import Review
 
 The intended V1 workflow is:
 
-Models → Import Model → choose STL → Review Import → confirm import → Model workspace
+Select STL(s) → upload → backend processing → ready for review → review → confirm → Model workspace
 
 Selecting an STL must not immediately create a fully accepted Model without review. Import means validating the supported file, extracting reliable file/model information, showing what PrintForge knows and what still requires user input, allowing review/editing of import-time metadata, and confirming creation of the Model.
 
-For V1, the frontend sends the selected STL to the backend for supported-file validation, server-side geometry parsing, and authoritative metadata extraction, including geometric/model bounds. The backend returns import-review information for the frontend to display. The user supplies or edits appropriate import-time metadata, then the frontend submits confirmation and the backend creates the Model. Review Import must display backend-returned geometry information rather than independently deriving authoritative geometry in React. Browser-side STL parsing is not a V1 requirement.
+V1 supports selecting multiple STL files. Each file has an independently understandable state, so a slow or failed import does not obscure the others. While bytes transfer, the file is a transient frontend upload task. Once the backend acknowledges receipt of the complete STL, it owns a persistent ImportDraft and processes supported-file validation, server-side geometry parsing, and authoritative metadata extraction, including geometric/model bounds. The user can review the resulting information and confirm creation of a Model. Review Import displays backend-returned geometry rather than independently deriving authoritative geometry in React. Browser-side STL parsing is not a V1 requirement.
+
+Imports is a separate area for files that have not become Models. The Models collection contains confirmed Models only. After confirmation, the item leaves Imports and appears in Models. The Imports view clearly distinguishes active frontend uploads, backend imports processing, imports ready for review, and failed imports; its exact layout, section labels, and ordering remain flexible. Backend state changes appear automatically without a manual application reload.
+
+An active upload may show filename, upload state, actual transfer progress and percentage when meaningful, waiting/queued state, failure, and appropriate retry or remove actions. Upload percentage describes transport state, not a domain calculation. Backend processing uses status or indeterminate progress unless the backend provides meaningful real progress; the UI must not invent a processing percentage.
+
+The user receives clear feedback that leaving or closing PrintForge during an active upload may interrupt it. When the platform permits, the application makes a reasonable effort to warn before leaving while uploads are active. After complete upload acknowledgment, backend processing continues without requiring the Imports page or browser to stay open. Interrupted or partial uploads must not retain orphaned file data indefinitely. Resumable or chunked uploads are not required in V1.
+
+ImportDrafts survive navigation, refresh, closing and reopening PrintForge, and normal absence before review. Their backend states are PROCESSING, READY_FOR_REVIEW, and FAILED. A completed upload enters PROCESSING, then becomes READY_FOR_REVIEW or FAILED. A ready draft may be reviewed, confirmed, or discarded. Confirmation creates a Model and consumes/removes the draft from Imports; discard removes the draft and its unclaimed source asset according to application lifecycle behavior. Failed drafts stay visible so failures are understandable. Opening review does not create an IN_REVIEW backend state. Retry behavior is not yet specified.
+
+Abandoned unconfirmed ImportDrafts and their unclaimed assets must eventually be cleaned up under an explicit retention policy. Its duration remains undecided. This durable-draft cleanup is distinct from partial-upload cleanup and does not establish archive, recovery, soft-delete, or long-term import history.
 
 The frontend may collect input, transmit files, construct requests, format returned information, manage transient UI state, and provide basic form feedback. Formatting a returned byte count as a readable file size or formatting numeric values for display is allowed; authoritative validation and business decisions remain on the backend/domain side.
 
@@ -496,7 +506,7 @@ The review step should support:
 - Creator information when known.
 - Commercial-use rights/review status, or an explicit not-reviewed state.
 - A confirm/import action.
-- A cancel/back action that leaves the import unconfirmed.
+- A cancel/back action that leaves the ImportDraft unconfirmed; discard is a separate action.
 
 The user should be able to provide or edit information that cannot be reliably inferred. Unknown source, creator, or rights information must be shown as unknown or not reviewed rather than inferred from the STL. Confirming import does not mean that commercial-use rights have been reviewed or that a product is ready to sell.
 
@@ -512,7 +522,7 @@ Preserve this workflow while keeping exact labels, layout, and screen compositio
 
 Original STL and Editable Metadata
 
-After confirmed import, PrintForge retains the original uploaded STL unchanged as the source file associated with the Model. V1 does not edit, rewrite, or overwrite STL geometry.
+While an ImportDraft exists, its complete uploaded STL is an unconfirmed source asset. Confirmation associates that same unchanged original STL with the resulting Model, without requiring another upload or regenerated file. Ownership or reference may change without physically copying or moving the binary. V1 does not edit, rewrite, or overwrite STL geometry.
 
 Model metadata remains editable independently of that immutable source asset. Model name, description, notes, source information, creator information, rights-review information, and other user-entered or reviewed metadata may be updated without implying that the source STL changed.
 
@@ -520,9 +530,9 @@ Original filename, file size, file type, geometric/model bounds, and other metad
 
 V1 does not require STL versioning because PrintForge updates metadata and related business information rather than the underlying geometry. A meaningfully different STL should be imported as a separate Model. STL revision history, file version tables, overwrite workflows, and geometry editing are outside V1.
 
-The binary STL is stored as a file/object asset rather than inside ordinary relational business columns. PostgreSQL stores the Model record, a reference to the stored STL, and relevant file metadata. The exact storage provider and mechanism remain undecided.
+The binary STL is stored as a file/object asset rather than inside ordinary relational business columns. PostgreSQL stores durable ImportDraft state and its asset reference, then the confirmed Model's reference and relevant file metadata. The exact storage provider and mechanism remain undecided.
 
-Keep the lifecycle simple: Model metadata can be edited, the associated original STL is immutable, and deleting a Model may eventually remove its file asset according to application deletion behavior. This does not establish recovery, archive, soft-delete, retention-period, or file-history systems.
+Model metadata can be edited, the associated original STL is immutable, and deleting a Model may eventually remove its file asset according to application deletion behavior. ImportDraft retention is specified separately above; neither lifecycle establishes recovery, archive, soft-delete, or file-history systems.
 
 The source asset, editable Model metadata, authoritative file metadata, and Product/Production/economics data remain distinct. Product, ProductionProfile, Plate, FilamentUsage, and economics concerns must not move into the Model record.
 
@@ -549,6 +559,8 @@ Future browser-side parsing, visualization, or derived preview values may suppor
 Model Library
 
 Users need a browsable collection of the Models they have added to PrintForge.
+
+Only confirmed Models appear in this collection; unconfirmed files remain in Imports.
 
 The Model library should allow users to:
 

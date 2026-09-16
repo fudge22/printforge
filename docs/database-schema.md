@@ -38,6 +38,7 @@ Keep V2 concerns out of the V1 schema unless V1 genuinely requires them.
 The planned V1 schema contains:
 
 models
+import_drafts
 model_rights_reviews
 source_profiles
 
@@ -88,7 +89,7 @@ notes
 created_at
 updated_at
 
-For confirmed STL imports, PostgreSQL stores the Model record plus a reference to the retained original STL asset and relevant file metadata. The binary STL belongs in file/object asset storage, not ordinary relational business columns. The exact storage provider/mechanism and field representation remain undecided.
+For confirmed STL imports, PostgreSQL stores the Model record plus a reference to the same retained original STL asset previously associated with the ImportDraft and relevant file metadata. The binary STL belongs in file/object asset storage, not ordinary relational business columns. The exact storage provider/mechanism and field representation remain undecided.
 
 Relevant file metadata includes original filename, file size, file type, geometric/model bounds, and other information derived directly from server-side parsing of the immutable STL. This is authoritative file metadata associated with the retained source, not independently editable business state. It may be formatted for display. Recording this source-associated metadata does not change the rule against persisting independent mutable economic calculations.
 
@@ -108,6 +109,14 @@ Important rule
 Manufacturing material, plate layout, production yield, and actual print configuration do not belong on models.
 
 A Model represents the digital design, not manufacturing truth.
+
+5.1 import_drafts
+
+Persists backend-owned pre-Model state after successful receipt of a complete STL. An ImportDraft is separate from models and does not appear in the confirmed Models collection. A browser upload in progress is transient frontend state, not an ImportDraft.
+
+Conceptual persisted information includes an identifier, lifecycle status (PROCESSING, READY_FOR_REVIEW, or FAILED), a reference to the unchanged unconfirmed STL asset, and relevant original-file and processing/review information. Exact fields and storage representation remain implementation decisions. The binary belongs in file/object storage rather than ordinary relational business columns. Multiple drafts are independent; a failed draft remains available for the user to understand the failure.
+
+Confirmation creates a Model associated with the same original STL and consumes/removes the draft. This transition must preserve asset ownership/reference integrity without requiring a binary copy or re-upload. Discard removes the draft and its unclaimed asset according to application lifecycle behavior. An explicit retention policy must eventually clean up abandoned drafts and unclaimed assets; its duration is undecided. Cleanup of incomplete uploads is separate. No archive, recovery, soft-delete, or long-term import-history model is implied.
 
 6. source_profiles
 

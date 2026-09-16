@@ -99,19 +99,21 @@ User-facing terminology should communicate geometric bounds without implying tha
 
 3.4 Model Import Acceptance
 
-Selecting an STL begins an import review; it does not immediately create a fully accepted Model. The user reviews reliable file/model information and may provide or edit import-time metadata before confirming creation of the Model. Canceling or going back leaves the import unconfirmed.
+Selecting one or more STLs begins transient frontend uploads; selection and incomplete transfer do not create Models or backend ImportDrafts. After the backend acknowledges complete receipt of each STL, a persistent ImportDraft represents that unconfirmed source asset independently of other files. An ImportDraft is not a Model and survives navigation, refresh, browser closure, and normal absence. The user reviews reliable file/model information and may provide or edit import-time metadata before confirming creation of a Model. Leaving review keeps the draft unconfirmed; discarding explicitly removes it and its unclaimed source asset according to application lifecycle behavior.
 
 Import validates the supported file and extracts reliable information such as filename, file size, and geometric bounds. It does not establish a useful commercial description, source/creator provenance, license or commercial-use permission, production settings, filament selection, print time, plate yield, selling price, or commercial readiness from the STL itself.
 
-In V1, supported-file validation, STL geometry parsing, and authoritative metadata extraction happen server-side. The frontend sends the selected file and displays backend-returned import-review information, including authoritative geometric/model bounds. It submits the user's confirmation to the backend, which creates the Model. React does not independently determine authoritative geometry.
+The ImportDraft lifecycle has backend states PROCESSING, READY_FOR_REVIEW, and FAILED. After complete upload acknowledgment, processing leads to READY_FOR_REVIEW or FAILED. A failed draft remains visible. Reviewing a ready draft is UI state, not an IN_REVIEW backend state. Confirmation creates the Model and consumes/removes the ImportDraft from Imports. Abandoned drafts and unclaimed assets require eventual cleanup under an explicit retention policy whose duration is undecided; partial uploads require separate cleanup. Retry semantics remain undecided.
+
+In V1, supported-file validation, STL geometry parsing, and authoritative metadata extraction happen server-side. The frontend displays backend-returned import-review information, including authoritative geometric/model bounds, and submits confirmation to the backend. React does not independently determine authoritative geometry.
 
 Import confirmation accepts the Model, not a commercial-readiness or rights determination. Source and creator information remain provenance context; commercial-use review may explicitly remain not reviewed. The existing SourceProfile and ModelRightsReview responsibilities remain unchanged.
 
-Product pricing, manufacturing configuration, planned filament usage, and economics belong to their existing ProductVariant, ProductionProfile, and Plate context in the subsequent evaluation workspace, not to initial Model import metadata. The review workflow does not introduce a new domain entity or prescribe persistence for an unconfirmed selection.
+Product pricing, manufacturing configuration, planned filament usage, and economics belong to their existing ProductVariant, ProductionProfile, and Plate context in the subsequent evaluation workspace, not to initial Model import metadata. The persistent pre-Model ImportDraft is deliberately separate from the confirmed Model and does not change these ownership boundaries.
 
 3.5 Immutable Source Asset and Editable Metadata
 
-After confirmed import, the Model is associated with the original uploaded STL, retained unchanged as an immutable source asset. PrintForge does not edit, rewrite, or overwrite STL geometry in V1.
+The complete uploaded STL is an unconfirmed source asset while its ImportDraft exists. On confirmation, that same original STL becomes associated with the Model without re-upload or regeneration; changing ownership or reference need not physically move or copy the binary. It is retained unchanged. PrintForge does not edit, rewrite, or overwrite STL geometry in V1.
 
 The Model and its related metadata remain editable: name, description, notes, source and creator information, rights-review information, and other user-entered or reviewed metadata may change without changing the source STL. SourceProfile and ModelRightsReview retain their existing responsibilities.
 
