@@ -150,6 +150,8 @@ Printer hours per finished unit is a production metric representing printer capa
 
 Plate yield and units required per sale are different concepts and must remain distinct.
 
+When a ProductionProfile requires multiple Plates, V1 assumes each Plate supports the same chosen batch quantity of finished ProductVariant units. The required Plates' printer-time contributions are combined for per-unit and per-sale economics. The user arranges their contents in the slicer to support that shared batch; V1 does not calculate how to balance mismatched Plate yields.
+
 V1 economics must use planned plate print time and planned usable yield (plannedUsableUnits), not actual production results. For any per-unit or per-sale calculation, plannedUsableUnits must be greater than zero. Zero or negative plannedUsableUnits is invalid domain data because a plan with no usable output cannot provide a per-unit or per-sale result. The calculation must reject it rather than return 0, even when planned print time or units per sale is zero.
 
 Negative planned values, including planned print time and units per sale, are invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print time is valid and yields 0 printer hours per finished unit and per sale. Zero units per sale yields 0 printer hours per sale without changing the per-finished-unit metric.
@@ -188,6 +190,8 @@ Packaging.
 Post-processing work.
 
 A Plate is the planned production arrangement the user has chosen to evaluate or produce. It may initially reflect a single-model slice or another minimally prepared arrangement; the user can later refine it after changing the arrangement in the slicer. Planned print time, usable finished-unit output, and filament usage belong to the Plate, not the imported Model. Planned usable output is not the theoretical maximum number of objects that fit: a plate with nine tops and nine bottoms may yield nine complete finished units. The chosen plan and its inputs remain distinct from source-model information and future actual production results. V1 does not redesign production for more complicated multi-plate scenarios.
+
+For V1, all Plates in a ProductionProfile are planned around the same finished-unit batch quantity. For example, a batch of 12 Knitted Ghosts may use a Body Plate with 12 bodies and an Eye Plate with 24 eyes. Both Plates have plannedUsableUnits = 12 because each supports 12 finished Ghosts, even if more eyes could physically fit. The user chooses those physical arrangements in the slicer. PrintForge does not need Plate object quantities, per-unit physical component counts, leftover component inventory, mismatched-yield balancing, theoretical capacity, or automatic Plate-capacity optimization for this case.
 
 The slicer remains authoritative for detailed slicer configuration. The user manages printer profiles, nozzle size, layer height, infill, wall count, supports, and other slicing settings there. PrintForge records commercially relevant planned outputs of the slice; production notes may still record details the user wants to remember. V1 does not duplicate or synchronize slicer settings.
 

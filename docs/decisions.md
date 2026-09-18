@@ -505,3 +505,19 @@ Consequences
 Known inputs may produce preliminary economics. Missing usage categories remain distinct from explicit zero, and the UI identifies estimates with incomplete relevant inputs. V1 does not include slicer synchronization, Bambu Studio integration, automatic detection of external changes, printer or fleet management, print-job history, or automatic production optimization.
 
 Future consideration: PrintForge may eventually distinguish production plans optimized for production from plans that are not. A possible progression is Model import, initial slice, preliminary economics, slicer optimization, refined economics, then a production-ready plan. V1 has no required optimization status, no productionOptimizationStatus field, no criteria for being optimized, and no automatic optimization determination. More complicated multi-plate production scenarios also remain a separate future design discussion.
+
+ADR-017: Use One Finished-Unit Batch Quantity Across a ProductionProfile's Plates
+
+Status: Accepted
+
+Decision
+
+In V1, every Plate in a ProductionProfile is planned to support the same chosen batch quantity of finished ProductVariant units. plannedUsableUnits records that quantity for each Plate, regardless of how many physical objects the Plate contains. The user arranges those objects in the slicer. PrintForge combines the required Plates' planned costs and printer-time contributions for economics.
+
+Rationale
+
+This represents the commercially relevant output of a multi-Plate production plan without requiring PrintForge to model physical object counts. For a batch of 12 Knitted Ghosts, a Plate with 12 bodies and a Plate with 24 eyes each support 12 finished Ghosts.
+
+Consequences
+
+V1 does not model Plate object/component quantities, leftover component inventory, mismatched Plate-yield balancing, theoretical maximum Plate capacity, or automatic Plate-capacity optimization. Independently manufactured, separately sellable items remain within the existing ProductVariant and INTERNALLY_MANUFACTURED ProductComponent concepts. Optional bundles of independent products remain a future design discussion.

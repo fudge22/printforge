@@ -328,8 +328,8 @@ It must not be confused with plate yield.
 
 Example:
 
-A plate plans to produce: 8 usable pieces
-A customer receives:     2 pieces per sale
+A plate supports:       8 finished ProductVariant units
+A customer receives:    2 finished units per sale
 
 plannedUsableUnits = 8
 unitsPerSale = 2
@@ -377,7 +377,7 @@ Costing and capacity calculations should use the applicable ProductionProfile ra
 
 A Plate is a first-class plan/template for the production arrangement the user has chosen to evaluate or produce for a ProductVariant. V1 economics uses its planned values, not actual production results. An initial Plate may represent a single-model slice or another minimally prepared arrangement and can be refined after the user changes the arrangement in the slicer. The imported Model does not own how many finished units the arrangement yields.
 
-A ProductionProfile may require one or more Plates.
+A ProductionProfile may require one or more Plates. In V1, all its Plates are arranged to support the same chosen finished-unit batch quantity. The user plans the physical objects on each Plate in the slicer; PrintForge does not balance mismatched Plate yields.
 
 Example:
 
@@ -398,7 +398,9 @@ These values describe the manufacturing plan rather than an executed manufacturi
 
 12.2 Plate Yield
 
-Plate yield represents the planned usable finished-unit output of the chosen arrangement, named plannedUsableUnits. It is neither actual output nor the theoretical maximum number of objects that could fit on a plate. Nine tops and nine bottoms may represent nine complete finished units, not 18.
+Plate yield represents the number of finished ProductVariant units that the chosen Plate arrangement supports, named plannedUsableUnits. It is neither actual output nor the number of physical printed objects or the theoretical maximum that could fit on a plate. Nine tops and nine bottoms may support nine complete finished units, not 18.
+
+Every Plate in a ProductionProfile uses the same plannedUsableUnits in V1. For a batch of 12 Knitted Ghosts requiring one body and two eyes each, a Body Plate with 12 bodies and an Eye Plate with 24 eyes each have plannedUsableUnits = 12. The chosen 24 eyes matter, not how many eyes could theoretically fit. PrintForge records the finished-unit batch supported by each Plate, while the user reasons about physical object quantities in the slicer. V1 does not model Plate object/component quantities, leftover component inventory, mismatched Plate-yield balancing, or automatic Plate-capacity optimization.
 
 Yield must remain distinct from ProductVariant.unitsPerSale.
 
@@ -419,6 +421,8 @@ Is independently manufactured.
 Improves understanding of the manufacturing process.
 
 The goal is to model meaningful manufacturing concepts rather than reproduce slicer geometry inside the business domain.
+
+An independently useful manufactured item with its own ProductVariant, production plan, costing, and ability to be sold separately is a different concern. For example, a separately sellable frame used with a HueForge belongs conceptually to the existing INTERNALLY_MANUFACTURED ProductComponent relationship, not to Plate object counting. Optional commercial bundles of independent products remain a future design discussion.
 
 13. Filament
 
@@ -715,7 +719,7 @@ printerHoursPerFinishedUnit * unitsPerSale
 
 Printer hours per finished unit is a production metric representing printer capacity required to produce one planned usable finished unit. Printer hours per sale describes capacity for the quantity sold and remains useful for commercial economics, especially when one sale contains multiple units. These are separate derived metrics and must not be conflated.
 
-For manufacturing configurations involving multiple required Plates, the applicable printer-time contribution from the required Plates must be combined.
+For manufacturing configurations involving multiple required Plates, the applicable printer-time contribution from the required Plates must be combined. V1 assumes those Plates each support the same planned finished-unit batch quantity; it does not derive a balanced yield from mismatched Plates.
 
 Both metrics use plannedPlatePrintHours and plannedUsableUnits from the manufacturing plan. Per-unit and per-sale calculations must reject zero or negative plannedUsableUnits as invalid domain data, even when planned print hours or unitsPerSale is zero. Negative planned values, including planned print hours and unitsPerSale, are invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print hours is valid and yields 0 printer hours per finished unit and per sale. Zero unitsPerSale yields 0 printer hours per sale without changing the per-finished-unit metric.
 
@@ -845,6 +849,7 @@ AI-generated Models are not automatically considered free of IP concerns.
 ProductVariant represents the actual sellable variation.
 unitsPerSale and Plate yield are separate concepts.
 A ProductionProfile may require multiple Plates.
+All Plates in a V1 ProductionProfile support the same chosen finished-unit batch quantity.
 Plate is a manufacturing plan/template and owns planned print duration, plannedUsableUnits, and planned FilamentUsage.
 Filament usage is one-to-many and must not use fixed filament slots.
 Manufacturing material belongs to planned production usage in V1 rather than Model.

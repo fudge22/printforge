@@ -381,7 +381,9 @@ Planned print duration.
 Planned usable yield.
 Planned filament usage.
 
-planned_usable_units corresponds to the usable finished-unit output of the chosen arrangement, not units_per_sale or the theoretical maximum number of objects that fit. Nine tops and nine bottoms may yield nine finished units. planned_print_hours supplies the planned plate print time. A Model does not own plate yield.
+planned_usable_units corresponds to the number of finished ProductVariant units the chosen Plate arrangement supports, not units_per_sale, physical object count, or theoretical maximum capacity. planned_print_hours supplies the planned Plate print time. A Model does not own Plate yield.
+
+For V1, Plates under one ProductionProfile share the same planned_usable_units because the user arranges each Plate in the slicer for one chosen finished-unit batch. A batch of 12 Knitted Ghosts may have a Body Plate containing 12 bodies and an Eye Plate containing 24 eyes; both record planned_usable_units = 12. No physical Plate-object quantity relationships, leftover component inventory, or mismatched-yield balancing are needed for this case. This is a conceptual consistency rule; the enforcement mechanism is left to implementation.
 
 Negative planned values are invalid domain data. Any per-sale calculation requires planned_usable_units greater than zero; zero yield must not produce a fallback per-sale result of 0.
 
