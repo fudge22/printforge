@@ -487,3 +487,21 @@ persisted because they cannot be reconstructed from manufacturing data alone.
 If calculated values are persisted later for caching, reporting, or history,
 they must be treated as derived snapshots rather than the authoritative source
 of current business state.
+
+ADR-016: Keep Detailed Slicer Configuration in the Slicer
+
+Status: Accepted
+
+Decision
+
+The slicer is authoritative for printer profiles, nozzle size, layer height, infill, wall count, support configuration, and other detailed slicing settings. The user manages those settings there. PrintForge V1 records the chosen Plate's commercially relevant planned print time, usable finished-unit output, and per-filament consumption; production notes may retain details the user wants to remember. V1 does not duplicate or synchronize detailed slicer configuration.
+
+Rationale
+
+Commercial evaluation needs planned production outputs without recreating a slicer's configuration model. A user can evaluate a minimally prepared slice and refine its Plate inputs after further slicer work.
+
+Consequences
+
+Known inputs may produce preliminary economics. Missing usage categories remain distinct from explicit zero, and the UI identifies estimates with incomplete relevant inputs. V1 does not include slicer synchronization, Bambu Studio integration, automatic detection of external changes, printer or fleet management, print-job history, or automatic production optimization.
+
+Future consideration: PrintForge may eventually distinguish production plans optimized for production from plans that are not. A possible progression is Model import, initial slice, preliminary economics, slicer optimization, refined economics, then a production-ready plan. V1 has no required optimization status, no productionOptimizationStatus field, no criteria for being optimized, and no automatic optimization determination. More complicated multi-plate production scenarios also remain a separate future design discussion.

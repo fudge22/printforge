@@ -187,7 +187,9 @@ Consumables.
 Packaging.
 Post-processing work.
 
-A Plate is a manufacturing plan/template for V1 economics. The chosen manufacturing configuration and its planned inputs must be kept distinct from source-model information and from future actual production results.
+A Plate is the planned production arrangement the user has chosen to evaluate or produce. It may initially reflect a single-model slice or another minimally prepared arrangement; the user can later refine it after changing the arrangement in the slicer. Planned print time, usable finished-unit output, and filament usage belong to the Plate, not the imported Model. Planned usable output is not the theoretical maximum number of objects that fit: a plate with nine tops and nine bottoms may yield nine complete finished units. The chosen plan and its inputs remain distinct from source-model information and future actual production results. V1 does not redesign production for more complicated multi-plate scenarios.
+
+The slicer remains authoritative for detailed slicer configuration. The user manages printer profiles, nozzle size, layer height, infill, wall count, supports, and other slicing settings there. PrintForge records commercially relevant planned outputs of the slice; production notes may still record details the user wants to remember. V1 does not duplicate or synchronize slicer settings.
 
 9. Filament and Material Usage
 
@@ -205,9 +207,11 @@ filament16
 
 Material information belongs to planned production usage in V1 rather than to the abstract source Model.
 
-V1 costing uses planned material grams, planned waste grams, and an already-derived cost per gram for each filament usage. Material and waste must remain separately recorded to distinguish planned useful output from planned waste, while both contribute to cash material cost.
+For each Plate usage, the user selects a previously configured Filament and enters the slicer-reported modelGrams, supportGrams, purgeGrams, and towerGrams separately. Support usage is the supportGrams reported for that filament; V1 has no separate support-material configuration. These categories are not manually combined into a single entered total.
 
-Plate material cost sums the cost of material and waste across all usages. An empty collection produces 0. Zero amounts and zero cost per gram are valid; negative amounts or costs are invalid and must not be silently converted to zero. The canonical formula and input rules are defined in domain-model.md, section 14.1.
+PrintForge derives totalConsumptionGrams from the sum of known usage categories and uses the selected Filament's cost per gram to derive cost. Blank or unspecified is distinct from explicit zero: unspecified usage is excluded from the current estimate and makes the estimate preliminary when relevant; zero means known to be zero. An empty collection produces 0 known filament cost, not evidence that production consumes no filament. Negative amounts or cost per gram are invalid and must not be silently converted to zero. The canonical formula and input rules are defined in domain-model.md, section 14.1.
+
+Incomplete does not mean unusable. Economics use production information currently known. A user need not optimize a plate before evaluating possible viability; known inputs can produce preliminary economics while missing inputs are clearly identified. The UI should distinguish preliminary estimates from more complete, refined production estimates. A calculation that lacks a required denominator or other indispensable input should still explain why that metric is unavailable.
 
 10. Components
 
@@ -630,7 +634,7 @@ Filament Selection
 
 Users should be able to maintain reusable filament information so that material details do not need to be re-entered for every production configuration.
 
-When configuring planned filament usage, the user should be able to select from previously entered filament information and specify the amount required by the Plate.
+When configuring planned filament usage, the user should select previously entered filament information and enter each known model, support, purge, and tower amount reported by the slicer separately.
 
 For V1 economics, filament usage continues to provide or derive the costPerGram required by the domain calculations.
 
@@ -643,6 +647,8 @@ PrintForge should allow an evaluation to be incomplete.
 Users should be able to import a Model and return to it later without supplying every piece of commercial and manufacturing information immediately.
 
 As information is added, PrintForge should progressively provide more useful economics and readiness information.
+
+A minimally prepared slice with known print time, planned usable output, and some known filament categories may support a preliminary economic estimate. The UI should label estimates as preliminary or refined according to the completeness of relevant production inputs and show which categories remain unspecified. It must not treat unspecified purge or tower usage as known zero.
 
 Missing information should be communicated to the user rather than replaced with misleading calculated defaults.
 

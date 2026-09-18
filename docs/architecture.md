@@ -593,7 +593,7 @@ Domain validation that must remain consistent outside the UI.
 
 Business calculations and rules should continue to live in packages/domain where practical.
 
-The UI may use friendlier labels than the domain model. For example, a domain property such as plannedUsableUnits may be presented to the user as "Usable pieces per plate." User-facing terminology does not require renaming an otherwise appropriate domain concept.
+The UI may use friendlier labels than the domain model. For example, plannedUsableUnits may be presented as "Usable finished units from this plate." User-facing terminology does not require renaming an otherwise appropriate domain concept. The UI should distinguish preliminary economics based on known production inputs from refined estimates and show relevant missing inputs. Domain calculations and completeness rules remain authoritative outside React.
 
 Model Import Review Workflow
 

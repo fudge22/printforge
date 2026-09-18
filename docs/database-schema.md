@@ -356,7 +356,7 @@ SourceProfile must not substitute for this entity.
 
 15. plates
 
-Represents a manufacturing plan/template for a build plate used by a ProductionProfile. V1 economics uses planned values rather than actual production results.
+Represents the chosen planned production arrangement for a build plate used by a ProductionProfile. V1 economics uses planned values rather than actual production results. An initial arrangement may be minimally prepared and later refined after slicer work.
 
 Suggested fields
 id
@@ -381,7 +381,7 @@ Planned print duration.
 Planned usable yield.
 Planned filament usage.
 
-planned_usable_units corresponds to domain plannedUsableUnits and is not units_per_sale. planned_print_hours supplies the planned plate print time.
+planned_usable_units corresponds to the usable finished-unit output of the chosen arrangement, not units_per_sale or the theoretical maximum number of objects that fit. Nine tops and nine bottoms may yield nine finished units. planned_print_hours supplies the planned plate print time. A Model does not own plate yield.
 
 Negative planned values are invalid domain data. Any per-sale calculation requires planned_usable_units greater than zero; zero yield must not produce a fallback per-sale result of 0.
 
@@ -425,9 +425,11 @@ Suggested fields
 id
 plate_id
 filament_id
-quantity_used
 created_at
 updated_at
+
+Usage inputs must preserve separately entered modelGrams, supportGrams, purgeGrams, and towerGrams when known. Their exact column names and nullability remain undecided.
+
 Foreign keys
 filament_usages.plate_id
     → plates.id
@@ -439,7 +441,7 @@ plates
     └── 0..many filament_usages
 Important rule
 
-Filament usage must be modeled as a relational collection.
+Filament usage must be modeled as a relational collection. Each usage references a previously configured Filament. Missing usage categories must remain distinguishable from explicit zero; a missing category is omitted from a preliminary estimate, while zero is known consumption. Total consumption and material cost are derived from specified categories and the selected Filament's cost per gram, not authoritative mutable fields. V1 needs no special support-material entity or relationship.
 
 The schema must never introduce fixed columns such as:
 

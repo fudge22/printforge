@@ -344,12 +344,7 @@ It answers:
 
 How do I currently manufacture this variant?
 
-A ProductionProfile may contain information relevant to a specific manufacturing configuration, such as:
-
-Printer or printer class.
-Slicer configuration.
-Nozzle or manufacturing settings.
-Other production-specific information.
+A ProductionProfile may contain production notes or references that the user wants to remember, including a printer or slicer reference. The slicer remains authoritative for detailed printer profiles, nozzle size, layer height, infill, wall count, support configuration, and other slicing settings. V1 does not reproduce or synchronize those settings. ProductionProfile and its Plates own the planned manufacturing inputs used for PrintForge economics.
 
 Most importantly, the ProductionProfile owns the collection of Plates required to manufacture the variant under that configuration.
 
@@ -380,7 +375,7 @@ Costing and capacity calculations should use the applicable ProductionProfile ra
 
 12. Plate
 
-A Plate is a first-class manufacturing plan/template for a printer build plate required as part of manufacturing a ProductVariant. V1 economics uses its planned values, not actual production results.
+A Plate is a first-class plan/template for the production arrangement the user has chosen to evaluate or produce for a ProductVariant. V1 economics uses its planned values, not actual production results. An initial Plate may represent a single-model slice or another minimally prepared arrangement and can be refined after the user changes the arrangement in the slicer. The imported Model does not own how many finished units the arrangement yields.
 
 A ProductionProfile may require one or more Plates.
 
@@ -403,7 +398,7 @@ These values describe the manufacturing plan rather than an executed manufacturi
 
 12.2 Plate Yield
 
-Plate yield represents the planned usable output of the Plate, named plannedUsableUnits. It does not represent actual units produced.
+Plate yield represents the planned usable finished-unit output of the chosen arrangement, named plannedUsableUnits. It is neither actual output nor the theoretical maximum number of objects that could fit on a plate. Nine tops and nine bottoms may represent nine complete finished units, not 18.
 
 Yield must remain distinct from ProductVariant.unitsPerSale.
 
@@ -482,23 +477,28 @@ Plate
 
 14.1 V1 Material Cost
 
-Each filament usage used for V1 costing tracks planned consumption and its costing input:
+Each FilamentUsage selects a previously configured Filament and records slicer-reported consumption separately:
 
-Material grams (materialGrams).
-Waste grams (wasteGrams).
-An already-derived cost per gram (costPerGram).
+Model grams (modelGrams).
+Support grams (supportGrams).
+Purge grams (purgeGrams).
+Tower grams (towerGrams).
 
-Material grams and waste grams remain separate to preserve the distinction between material that becomes useful output and material that is wasted. Both represent consumed filament and contribute to cash material cost.
+Support grams are simply the support usage reported for that filament. V1 requires no dedicated support-material entity or configuration. Each usage obtains costPerGram from its selected Filament; the richer spool/inventory model remains deferred.
+
+A category may be unspecified during preliminary evaluation. Unspecified means it is not included in the current estimate; explicit zero means the user knows that category consumed none. Known categories can still support a preliminary cost estimate. Missing relevant categories must be identified so the estimate is not presented as complete.
 
 Plate material cost is derived across all FilamentUsage records for the Plate:
 
-sum((materialGrams + wasteGrams) * costPerGram)
+For each usage: totalConsumptionGrams = sum of its specified modelGrams, supportGrams, purgeGrams, and towerGrams.
 
-An empty collection of filament usages produces a material cost of 0.
+Plate material cost = sum(totalConsumptionGrams * costPerGram) across its usages.
 
-Zero material grams, zero waste grams, and zero cost per gram are valid. A zero gram amount contributes 0 for that amount; a zero cost per gram makes the entire usage contribute 0.
+An empty collection of filament usages produces 0 known material cost, without claiming that actual planned consumption is zero.
 
-Negative material grams, waste grams, or cost per gram are invalid domain data and must not be silently converted to zero.
+Explicit zero for any usage category and zero cost per gram are valid. A zero gram amount contributes 0 for that category; a zero cost per gram makes the entire usage contribute 0.
+
+Negative usage amounts or cost per gram are invalid domain data and must not be silently converted to zero.
 
 Plate material cost is derived business data and must not be persisted as authoritative state.
 
