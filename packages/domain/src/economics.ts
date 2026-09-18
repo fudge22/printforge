@@ -16,8 +16,10 @@ export interface PrinterHoursPerSaleInput {
 }
 
 export interface FilamentUsageCostInput {
-  materialGrams: number;
-  wasteGrams: number;
+  modelGrams?: number;
+  supportGrams?: number;
+  purgeGrams?: number;
+  towerGrams?: number;
   costPerGram: number;
 }
 
@@ -49,17 +51,29 @@ export function calculatePlateMaterialCost(
   let total = 0;
 
   for (const usage of filamentUsages) {
-    if (usage.materialGrams < 0) {
-      throw new RangeError("materialGrams must not be negative");
+    if (usage.modelGrams !== undefined && usage.modelGrams < 0) {
+      throw new RangeError("modelGrams must not be negative");
     }
-    if (usage.wasteGrams < 0) {
-      throw new RangeError("wasteGrams must not be negative");
+    if (usage.supportGrams !== undefined && usage.supportGrams < 0) {
+      throw new RangeError("supportGrams must not be negative");
+    }
+    if (usage.purgeGrams !== undefined && usage.purgeGrams < 0) {
+      throw new RangeError("purgeGrams must not be negative");
+    }
+    if (usage.towerGrams !== undefined && usage.towerGrams < 0) {
+      throw new RangeError("towerGrams must not be negative");
     }
     if (usage.costPerGram < 0) {
       throw new RangeError("costPerGram must not be negative");
     }
 
-    total += (usage.materialGrams + usage.wasteGrams) * usage.costPerGram;
+    const totalConsumptionGrams =
+      (usage.modelGrams ?? 0) +
+      (usage.supportGrams ?? 0) +
+      (usage.purgeGrams ?? 0) +
+      (usage.towerGrams ?? 0);
+
+    total += totalConsumptionGrams * usage.costPerGram;
   }
 
   return total;

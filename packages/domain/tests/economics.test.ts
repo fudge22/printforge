@@ -21,43 +21,75 @@ describe("plate material cost", () => {
     expect(calculatePlateMaterialCost([])).toBe(0);
   });
 
-  it("includes both material and waste in a single usage's cost", () => {
+  it("costs model grams alone", () => {
     expect(calculatePlateMaterialCost([
-      { materialGrams: 100, wasteGrams: 20, costPerGram: 0.05 }
+      { modelGrams: 100, costPerGram: 0.05 }
+    ])).toBeCloseTo(5);
+  });
+
+  it("includes model and support grams", () => {
+    expect(calculatePlateMaterialCost([
+      { modelGrams: 100, supportGrams: 20, costPerGram: 0.05 }
     ])).toBeCloseTo(6);
   });
 
-  it("sums multiple filament usages with different costs", () => {
+  it("includes all four consumption categories", () => {
     expect(calculatePlateMaterialCost([
-      { materialGrams: 100, wasteGrams: 20, costPerGram: 0.05 },
-      { materialGrams: 50, wasteGrams: 10, costPerGram: 0.02 },
-      { materialGrams: 25, wasteGrams: 5, costPerGram: 0.1 }
+      { modelGrams: 100, supportGrams: 20, purgeGrams: 10, towerGrams: 5, costPerGram: 0.05 }
+    ])).toBeCloseTo(6.75);
+  });
+
+  it("sums multiple filament usages with different specified categories and costs", () => {
+    expect(calculatePlateMaterialCost([
+      { modelGrams: 100, supportGrams: 20, costPerGram: 0.05 },
+      { purgeGrams: 50, towerGrams: 10, costPerGram: 0.02 },
+      { modelGrams: 25, towerGrams: 5, costPerGram: 0.1 }
     ])).toBeCloseTo(10.2);
   });
 
   it("preserves fractional amounts and costs without rounding", () => {
     expect(calculatePlateMaterialCost([
-      { materialGrams: 1.25, wasteGrams: 0.125, costPerGram: 0.023 }
+      { modelGrams: 1.25, supportGrams: 0.125, costPerGram: 0.023 }
     ])).toBeCloseTo(0.031625, 8);
   });
 
-  it.each([
-    { materialGrams: 0, wasteGrams: 10, costPerGram: 0.05, expected: 0.5 },
-    { materialGrams: 10, wasteGrams: 0, costPerGram: 0.05, expected: 0.5 },
-    { materialGrams: 10, wasteGrams: 5, costPerGram: 0, expected: 0 },
-    { materialGrams: 0, wasteGrams: 0, costPerGram: 0.05, expected: 0 },
-    { materialGrams: 0, wasteGrams: 0, costPerGram: 0, expected: 0 }
-  ])("handles zero inputs: $materialGrams, $wasteGrams, $costPerGram", ({ expected, ...usage }) => {
-    expect(calculatePlateMaterialCost([usage])).toBeCloseTo(expected);
+  it("omits unspecified categories from the known cost", () => {
+    expect(calculatePlateMaterialCost([
+      { modelGrams: 10, towerGrams: 2, costPerGram: 0.05 }
+    ])).toBeCloseTo(0.6);
   });
 
-  it.each(["materialGrams", "wasteGrams", "costPerGram"] as const)(
+  it("returns 0 known cost when all categories are unspecified", () => {
+    expect(calculatePlateMaterialCost([{ costPerGram: 0.05 }])).toBe(0);
+  });
+
+  it("accepts explicit zero in every category", () => {
+    expect(calculatePlateMaterialCost([{
+      modelGrams: 0,
+      supportGrams: 0,
+      purgeGrams: 0,
+      towerGrams: 0,
+      costPerGram: 0.05
+    }])).toBe(0);
+  });
+
+  it("accepts zero cost per gram", () => {
+    expect(calculatePlateMaterialCost([{
+      modelGrams: 10,
+      supportGrams: 5,
+      purgeGrams: 2,
+      towerGrams: 1,
+      costPerGram: 0
+    }])).toBe(0);
+  });
+
+  it.each(["modelGrams", "supportGrams", "purgeGrams", "towerGrams", "costPerGram"] as const)(
     "rejects negative %s even when other inputs are zero",
     (field) => {
-      const usage = { materialGrams: 0, wasteGrams: 0, costPerGram: 0, [field]: -1 };
+      const usage = { costPerGram: 0, [field]: -1 };
 
       expect(() => calculatePlateMaterialCost([
-        { materialGrams: 100, wasteGrams: 20, costPerGram: 0.05 },
+        { modelGrams: 100, supportGrams: 20, costPerGram: 0.05 },
         usage
       ])).toThrow(new RangeError(`${field} must not be negative`));
     }
