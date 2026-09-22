@@ -391,6 +391,12 @@ Actual production results belong to a future PrintJob or equivalent execution/hi
 
 A ProductionProfile may require multiple Plates.
 
+Entered Plate-level inputs must be retained while other required Plates are incomplete, preserving enough context to identify the incomplete or missing Plate and the information still needed. Unknown inputs must remain distinguishable from explicit zero.
+
+ProductionProfile material cost and printer hours per finished unit are derived by summing all required Plates' respective costs and planned print hours and dividing by their shared planned_usable_units. Printer hours measure additive capacity even when Plates print simultaneously; units_per_sale remains separate. These aggregates and their availability are derived from authoritative inputs, not independent mutable state. Product-level estimates must follow the indispensable-data rule in domain-model.md, section 11.3.
+
+The exact boundary between indispensable inputs and optional refinements remains unresolved. This decision does not prescribe new columns, nullability, constraints, stored readiness flags, or migrations before that boundary is worked through.
+
 16. filaments
 
 Represents a reusable filament/material definition.
@@ -444,6 +450,8 @@ plates
 Important rule
 
 Filament usage must be modeled as a relational collection. Each usage references a previously configured Filament. Missing usage categories must remain distinguishable from explicit zero; a missing category is omitted from a preliminary estimate, while zero is known consumption. Total consumption and material cost are derived from specified categories and the selected Filament's cost per gram, not authoritative mutable fields. V1 needs no special support-material entity or relationship.
+
+Omitting unspecified categories from Plate-level known-cost calculations does not authorize product-level estimates when a required Plate lacks indispensable production data; see domain-model.md, section 11.3.
 
 The schema must never introduce fixed columns such as:
 

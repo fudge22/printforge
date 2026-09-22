@@ -373,6 +373,22 @@ In V1, this means the chosen manufacturing configuration and its planned values,
 
 Costing and capacity calculations should use the applicable ProductionProfile rather than SourceProfile suggestions.
 
+11.3 V1 Multi-Plate Economics
+
+Every required Plate supports the same chosen batch quantity of finished ProductVariant units, recorded as plannedUsableUnits on each Plate. Once all required Plates have sufficient production data:
+
+ProductionProfile material cost per finished unit = sum of all required Plates' material costs / shared plannedUsableUnits.
+
+ProductionProfile printer hours per finished unit = sum of all required Plates' plannedPlatePrintHours / shared plannedUsableUnits.
+
+unitsPerSale remains a separate commercial quantity used to convert per-finished-unit values to per-sale values. The shared batch quantity is not the sum of the Plates' yields.
+
+Printer hours are additive manufacturing capacity consumed, not elapsed wall-clock time. For 12 Knitted Ghosts, an 8-hour/$9 Body Plate and a 2-hour/$3 Eyes Plate together consume 10 printer-hours and $12 in material, even if printed simultaneously. Per finished Ghost, this is 5/6 printer-hour (50 minutes of printer capacity) and $1 in material.
+
+Entered Plate-level information remains available while other required Plates are incomplete. PrintForge identifies the incomplete or missing Plate and the specific information needed. While any required Plate lacks indispensable production data, partial ProductionProfile material cost per finished unit, printer hours per finished unit or per sale, Cash Contribution, Cash Contribution Margin, and Cash Contribution per printer hour must not be presented as product-level estimates. A known subset of required Plates cannot stand in for the whole manufacturing plan.
+
+Once all required Plates have sufficient production data, the relevant aggregate calculations become available, subject to their other required inputs. Unspecified refinement inputs remain distinct from explicit zero and may make an available estimate preliminary; unknown values must not silently become zero. The precise boundary between indispensable inputs and optional refinements remains unresolved. This decision does not define a comprehensive readiness rule or prescribe validation before that boundary is worked through.
+
 12. Plate
 
 A Plate is a first-class plan/template for the production arrangement the user has chosen to evaluate or produce for a ProductVariant. V1 economics uses its planned values, not actual production results. An initial Plate may represent a single-model slice or another minimally prepared arrangement and can be refined after the user changes the arrangement in the slicer. The imported Model does not own how many finished units the arrangement yields.
@@ -491,6 +507,8 @@ Tower grams (towerGrams).
 Support grams are simply the support usage reported for that filament. V1 requires no dedicated support-material entity or configuration. Each usage obtains costPerGram from its selected Filament; the richer spool/inventory model remains deferred.
 
 A category may be unspecified during preliminary evaluation. Unspecified means it is not included in the current estimate; explicit zero means the user knows that category consumed none. Known categories can still support a preliminary cost estimate. Missing relevant categories must be identified so the estimate is not presented as complete.
+
+These Plate-level known-cost calculations do not establish that a ProductionProfile has sufficient data for product-level economics. Aggregate availability follows section 11.3; missing indispensable data on any required Plate prevents presenting a partial aggregate as a product-level estimate.
 
 Plate material cost is derived across all FilamentUsage records for the Plate:
 

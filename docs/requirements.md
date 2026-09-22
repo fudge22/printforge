@@ -152,6 +152,10 @@ Plate yield and units required per sale are different concepts and must remain d
 
 When a ProductionProfile requires multiple Plates, V1 assumes each Plate supports the same chosen batch quantity of finished ProductVariant units. The required Plates' printer-time contributions are combined for per-unit and per-sale economics. The user arranges their contents in the slicer to support that shared batch; V1 does not calculate how to balance mismatched Plate yields.
 
+When all required Plates have sufficient production data, ProductionProfile material cost per finished unit is the sum of all required Plates' material costs divided by the shared batch quantity. Printer hours per finished unit is the sum of all required Plates' planned print hours divided by that same quantity. unitsPerSale remains separate and converts per-finished-unit values to per-sale values.
+
+Printer hours measure additive manufacturing capacity consumed, not elapsed wall-clock time. For 12 Knitted Ghosts, an 8-hour/$9 Body Plate and a 2-hour/$3 Eyes Plate consume 10 printer-hours and $12 in material for the batch, even if printed simultaneously. This gives 5/6 printer-hour (50 minutes of printer capacity) and $1 in material per finished Ghost.
+
 V1 economics must use planned plate print time and planned usable yield (plannedUsableUnits), not actual production results. For any per-unit or per-sale calculation, plannedUsableUnits must be greater than zero. Zero or negative plannedUsableUnits is invalid domain data because a plan with no usable output cannot provide a per-unit or per-sale result. The calculation must reject it rather than return 0, even when planned print time or units per sale is zero.
 
 Negative planned values, including planned print time and units per sale, are invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print time is valid and yields 0 printer hours per finished unit and per sale. Zero units per sale yields 0 printer hours per sale without changing the per-finished-unit metric.
@@ -215,7 +219,13 @@ For each Plate usage, the user selects a previously configured Filament and ente
 
 PrintForge derives totalConsumptionGrams from the sum of known usage categories and uses the selected Filament's cost per gram to derive cost. Blank or unspecified is distinct from explicit zero: unspecified usage is excluded from the current estimate and makes the estimate preliminary when relevant; zero means known to be zero. An empty collection produces 0 known filament cost, not evidence that production consumes no filament. Negative amounts or cost per gram are invalid and must not be silently converted to zero. The canonical formula and input rules are defined in domain-model.md, section 14.1.
 
-Incomplete does not mean unusable. Economics use production information currently known. A user need not optimize a plate before evaluating possible viability; known inputs can produce preliminary economics while missing inputs are clearly identified. The UI should distinguish preliminary estimates from more complete, refined production estimates. A calculation that lacks a required denominator or other indispensable input should still explain why that metric is unavailable.
+PrintForge retains and displays entered Plate-level information while other required Plates are incomplete. It identifies the incomplete or missing Plate and the specific information needed, guiding the user to complete it.
+
+While any required Plate lacks indispensable production data, PrintForge must not present partial ProductionProfile material cost per finished unit, printer hours per finished unit or per sale, Cash Contribution, Cash Contribution Margin, or Cash Contribution per printer hour as product-level estimates. For example, the Body Plate alone must not stand in for the complete Knitted Ghost production plan while the required Eyes Plate lacks indispensable data.
+
+Once all required Plates have sufficient production data, the relevant aggregate calculations become available, subject to their other required inputs. A user need not optimize a Plate before evaluating viability. Unspecified refinement inputs may still make an available estimate preliminary and must remain distinguishable from explicit zero; unknown values must not silently become zero. The UI identifies missing refinements and distinguishes preliminary estimates from more complete, refined estimates.
+
+The precise boundary between indispensable production inputs and optional refinements remains to be worked through. These rules establish aggregate calculation availability, not a comprehensive new readiness rule or a premature validation specification.
 
 10. Components
 

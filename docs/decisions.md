@@ -502,7 +502,7 @@ Commercial evaluation needs planned production outputs without recreating a slic
 
 Consequences
 
-Known inputs may produce preliminary economics. Missing usage categories remain distinct from explicit zero, and the UI identifies estimates with incomplete relevant inputs. V1 does not include slicer synchronization, Bambu Studio integration, automatic detection of external changes, printer or fleet management, print-job history, or automatic production optimization.
+Known Plate-level inputs remain useful during preliminary evaluation. Product-level economics require sufficient production data on every required Plate, as defined in ADR-017; unspecified refinements may still make available estimates preliminary. Missing usage categories remain distinct from explicit zero, and the UI identifies estimates with incomplete relevant inputs. V1 does not include slicer synchronization, Bambu Studio integration, automatic detection of external changes, printer or fleet management, print-job history, or automatic production optimization.
 
 Future consideration: PrintForge may eventually distinguish production plans optimized for production from plans that are not. A possible progression is Model import, initial slice, preliminary economics, slicer optimization, refined economics, then a production-ready plan. V1 has no required optimization status, no productionOptimizationStatus field, no criteria for being optimized, and no automatic optimization determination. More complicated multi-plate production scenarios also remain a separate future design discussion.
 
@@ -514,10 +514,20 @@ Decision
 
 In V1, every Plate in a ProductionProfile is planned to support the same chosen batch quantity of finished ProductVariant units. plannedUsableUnits records that quantity for each Plate, regardless of how many physical objects the Plate contains. The user arranges those objects in the slicer. PrintForge combines the required Plates' planned costs and printer-time contributions for economics.
 
+Sum the material costs and planned print times of all required Plates, then divide each total by the shared batch quantity to derive material cost and printer hours per finished unit. Keep unitsPerSale separate for conversion to per-sale economics. Printer hours are additive manufacturing capacity consumed, not elapsed wall-clock time, including when Plates print simultaneously.
+
+Retain and display entered Plate-level information while other required Plates are incomplete, identifying the incomplete or missing Plate and the specific information needed. While any required Plate lacks indispensable production data, do not present partial ProductionProfile material cost per finished unit, printer hours per finished unit or per sale, Cash Contribution, Cash Contribution Margin, or Cash Contribution per printer hour as product-level estimates. Guide the user to complete the missing information.
+
+Unlock relevant aggregate calculations once all required Plates have sufficient production data, subject to their other required inputs. Preserve the distinction between unspecified refinement inputs and explicit zero; unknown values must not silently become zero. Available estimates may remain preliminary where refinements are unspecified.
+
 Rationale
 
 This represents the commercially relevant output of a multi-Plate production plan without requiring PrintForge to model physical object counts. For a batch of 12 Knitted Ghosts, a Plate with 12 bodies and a Plate with 24 eyes each support 12 finished Ghosts.
 
+An 8-hour/$9 Body Plate and a 2-hour/$3 Eyes Plate consume 10 printer-hours and $12 in material for that batch, or 5/6 printer-hour and $1 per finished Ghost. Using only the Body Plate would understate the required manufacturing cost and capacity.
+
 Consequences
 
 V1 does not model Plate object/component quantities, leftover component inventory, mismatched Plate-yield balancing, theoretical maximum Plate capacity, or automatic Plate-capacity optimization. Independently manufactured, separately sellable items remain within the existing ProductVariant and INTERNALLY_MANUFACTURED ProductComponent concepts. Optional bundles of independent products remain a future design discussion.
+
+The precise boundary between indispensable production inputs and optional refinements remains to be worked through. This decision establishes aggregate availability without inventing a comprehensive readiness rule or prescribing validation or schema changes prematurely. Aggregates remain derived from authoritative Plate inputs, consistent with ADR-015.
