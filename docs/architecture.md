@@ -593,7 +593,7 @@ Domain validation that must remain consistent outside the UI.
 
 Business calculations and rules should continue to live in packages/domain where practical.
 
-The UI may use friendlier labels than the domain model. For example, plannedUsableUnits may be presented as "Usable finished units from this plate." User-facing terminology does not require renaming an otherwise appropriate domain concept. The UI should distinguish preliminary economics based on known production inputs from refined estimates and show relevant missing inputs. Domain calculations and completeness rules remain authoritative outside React.
+The UI may use friendlier labels than the domain model. For example, the ProductionProfile's shared finished-unit batch quantity may be presented as "Finished units in this batch," entered once with instructions that every required Plate must support it. The UI displays per-metric availability and one consolidated missing-input checklist as specified in docs/requirements.md, section 9.1. A valid initial production estimate is distinct from a calculation with unknown required inputs. Domain calculations and input-sufficiency rules remain authoritative outside React.
 
 Model Import Review Workflow
 

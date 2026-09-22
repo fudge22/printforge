@@ -146,7 +146,9 @@ ProductModelLink.
 ProductVariant represents the actual sellable variation.
 unitsPerSale and Plate yield are different concepts.
 Plate is a first-class manufacturing concept.
-Plate owns print duration, usable output/yield, and FilamentUsage.
+ProductionProfile owns the shared finished-unit batch quantity, entered once.
+Every required Plate supports that quantity and owns its print duration and
+FilamentUsage.
 Filament usage is relational and arbitrary in number. Never introduce fixed
 fields such as filament1, filament2, etc.
 Actual manufacturing material belongs to production usage rather than

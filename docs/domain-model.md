@@ -331,7 +331,7 @@ Example:
 A plate supports:       8 finished ProductVariant units
 A customer receives:    2 finished units per sale
 
-plannedUsableUnits = 8
+ProductionProfile shared finished-unit batch quantity = 8
 unitsPerSale = 2
 
 These values represent different concepts and must remain separate.
@@ -375,19 +375,29 @@ Costing and capacity calculations should use the applicable ProductionProfile ra
 
 11.3 V1 Multi-Plate Economics
 
-Every required Plate supports the same chosen batch quantity of finished ProductVariant units, recorded as plannedUsableUnits on each Plate. Once all required Plates have sufficient production data:
+ProductionProfile owns the chosen finished-unit batch quantity, entered once by the user. Every required Plate must support that same quantity of finished ProductVariant units. This supersedes independent Plate-level plannedUsableUnits ownership; storage implications are described in database-schema.md, sections 14–15. For each calculation with sufficient inputs:
 
-ProductionProfile material cost per finished unit = sum of all required Plates' material costs / shared plannedUsableUnits.
+ProductionProfile material cost per finished unit = sum of all required Plates' material costs / shared finished-unit batch quantity.
 
-ProductionProfile printer hours per finished unit = sum of all required Plates' plannedPlatePrintHours / shared plannedUsableUnits.
+ProductionProfile printer hours per finished unit = sum of all required Plates' plannedPlatePrintHours / shared finished-unit batch quantity.
 
 unitsPerSale remains a separate commercial quantity used to convert per-finished-unit values to per-sale values. The shared batch quantity is not the sum of the Plates' yields.
 
 Printer hours are additive manufacturing capacity consumed, not elapsed wall-clock time. For 12 Knitted Ghosts, an 8-hour/$9 Body Plate and a 2-hour/$3 Eyes Plate together consume 10 printer-hours and $12 in material, even if printed simultaneously. Per finished Ghost, this is 5/6 printer-hour (50 minutes of printer capacity) and $1 in material.
 
-Entered Plate-level information remains available while other required Plates are incomplete. PrintForge identifies the incomplete or missing Plate and the specific information needed. While any required Plate lacks indispensable production data, partial ProductionProfile material cost per finished unit, printer hours per finished unit or per sale, Cash Contribution, Cash Contribution Margin, and Cash Contribution per printer hour must not be presented as product-level estimates. A known subset of required Plates cannot stand in for the whole manufacturing plan.
+Calculation availability is determined separately for each metric, not by an all-or-nothing ProductionProfile completeness gate. All required Plates must supply the inputs needed by that particular aggregate; a known subset of required Plates cannot stand in for the whole manufacturing plan.
 
-Once all required Plates have sufficient production data, the relevant aggregate calculations become available, subject to their other required inputs. Unspecified refinement inputs remain distinct from explicit zero and may make an available estimate preliminary; unknown values must not silently become zero. The precise boundary between indispensable inputs and optional refinements remains unresolved. This decision does not define a comprehensive readiness rule or prescribe validation before that boundary is worked through.
+Missing planned print time on any required Plate makes aggregate printer hours, printer hours per finished unit or sale, and Cash Contribution per printer hour unavailable. It does not by itself prevent material-cost calculations, Cash Contribution, or Cash Contribution Margin when their own inputs are sufficient.
+
+Missing material-cost inputs on any required Plate make aggregate material cost and dependent profitability calculations unavailable. Material cost must satisfy section 14.1; unknown costs must not be treated as zero. Missing shared batch quantity prevents per-unit and per-sale calculations requiring that denominator. Zero or negative batch quantities are invalid for those calculations, even when print time or unitsPerSale is zero.
+
+Valid entered Plate information, available Plate costs and print times, and other valid calculations remain visible when an aggregate is unavailable. The actionable missing-input presentation is specified in requirements.md, section 9.1. Availability remains derived from inputs; these rules introduce no stored completeness or readiness status and no comprehensive new readiness assessment.
+
+An initial slice supports normal profitability calculations when the relevant inputs are sufficient. Optimization is not a prerequisite. Later slicer changes recalculate economics from updated planned inputs; a valid initial estimate is distinct from a calculation whose required inputs are unknown.
+
+11.4 Changing the Shared Batch Quantity
+
+Changing the shared batch quantity preserves Plate print times and filament-consumption inputs without automatic scaling or clearing: slicer outputs need not scale linearly. Calculations continue using the preserved inputs and new quantity, subject to the usual per-metric input requirements. The review warning, confirmation, and optional explicit clearing behavior are specified in requirements.md, section 8; no persistence mechanism or new readiness status is prescribed.
 
 12. Plate
 
@@ -407,22 +417,22 @@ Production Profile
 A Plate owns planned manufacturing information, including:
 
 Planned print duration.
-Planned usable yield (plannedUsableUnits).
+An arrangement supporting the ProductionProfile's shared finished-unit batch quantity.
 Planned filament usage.
 
 These values describe the manufacturing plan rather than an executed manufacturing batch.
 
 12.2 Plate Yield
 
-Plate yield represents the number of finished ProductVariant units that the chosen Plate arrangement supports, named plannedUsableUnits. It is neither actual output nor the number of physical printed objects or the theoretical maximum that could fit on a plate. Nine tops and nine bottoms may support nine complete finished units, not 18.
+Plate yield represents the number of finished ProductVariant units that the chosen Plate arrangement supports. In V1 this is the shared quantity owned by ProductionProfile, not an independently entered Plate quantity. It is neither actual output nor the number of physical printed objects or the theoretical maximum that could fit on a plate. Nine tops and nine bottoms may support nine complete finished units, not 18.
 
-Every Plate in a ProductionProfile uses the same plannedUsableUnits in V1. For a batch of 12 Knitted Ghosts requiring one body and two eyes each, a Body Plate with 12 bodies and an Eye Plate with 24 eyes each have plannedUsableUnits = 12. The chosen 24 eyes matter, not how many eyes could theoretically fit. PrintForge records the finished-unit batch supported by each Plate, while the user reasons about physical object quantities in the slicer. V1 does not model Plate object/component quantities, leftover component inventory, mismatched Plate-yield balancing, or automatic Plate-capacity optimization.
+Every Plate in a ProductionProfile supports the same shared batch quantity in V1. For a batch of 12 Knitted Ghosts requiring one body and two eyes each, a Body Plate with 12 bodies and an Eyes Plate with 24 eyes each support 12 finished Ghosts. The UI explicitly instructs the user to prepare each Plate's arrangement in the slicer for that shared quantity. V1 does not model Plate object/component quantities, leftover component inventory, mismatched Plate-yield balancing, or automatic Plate-capacity optimization.
 
 Yield must remain distinct from ProductVariant.unitsPerSale.
 
 This distinction allows PrintForge to calculate how much printer capacity is required for each sale.
 
-For any per-unit or per-sale calculation, plannedUsableUnits must be greater than zero. A plan with no usable output cannot produce a derived per-unit or per-sale result. Zero or negative plannedUsableUnits is invalid domain data for these calculations and must not produce a fallback result of 0. Negative planned values must not be silently clamped. Zero planned print time is valid.
+Calculations requiring the shared batch denominator follow section 11.3. Negative planned values must not be silently clamped. Zero planned print time is valid.
 
 12.3 Do Not Model Every Printed Object Automatically
 
@@ -456,6 +466,8 @@ Other information needed to derive material cost.
 Filament represents the reusable material definition.
 
 Planned consumption belongs to FilamentUsage in V1.
+
+A Filament is configured before selection for Plate usage, with valid positive pricing information at creation and a positive derived costPerGram representing reasonable market or replacement value. Zero pricing is invalid, including for gifts or free samples: commercial viability must account for eventual replacement. Pricing is reused through the selected Filament, not re-entered for each Plate. A properly configured selected Filament has an associated cost; V1 does not introduce a routine unpriced-Filament usage workflow.
 
 13.1 Future Filament Modeling
 
@@ -506,21 +518,19 @@ Tower grams (towerGrams).
 
 Support grams are simply the support usage reported for that filament. V1 requires no dedicated support-material entity or configuration. Each usage obtains costPerGram from its selected Filament; the richer spool/inventory model remains deferred.
 
-A category may be unspecified during preliminary evaluation. Unspecified means it is not included in the current estimate; explicit zero means the user knows that category consumed none. Known categories can still support a preliminary cost estimate. Missing relevant categories must be identified so the estimate is not presented as complete.
+For a Plate material-cost calculation, all four amounts must be specified for every FilamentUsage. Blank or unspecified means unknown and makes that Plate's material cost unavailable; explicit zero is valid. Entered information may be retained without an available material-cost calculation. This supersedes calculating costs from only whichever categories are known.
 
-These Plate-level known-cost calculations do not establish that a ProductionProfile has sufficient data for product-level economics. Aggregate availability follows section 11.3; missing indispensable data on any required Plate prevents presenting a partial aggregate as a product-level estimate.
+Total modelGrams across the Plate's usages must be positive. An individual usage may have zero modelGrams when its filament is used only for support or another non-model purpose. Support, purge, and tower amounts need not be positive. Negative consumption amounts are invalid and must not be silently converted to zero.
 
 Plate material cost is derived across all FilamentUsage records for the Plate:
 
-For each usage: totalConsumptionGrams = sum of its specified modelGrams, supportGrams, purgeGrams, and towerGrams.
+For each usage: totalConsumptionGrams = modelGrams + supportGrams + purgeGrams + towerGrams.
 
 Plate material cost = sum(totalConsumptionGrams * costPerGram) across its usages.
 
-An empty collection of filament usages produces 0 known material cost, without claiming that actual planned consumption is zero.
+The formulas apply only when the consumption requirements and positive Filament pricing in section 13 are satisfied. An empty usage collection cannot satisfy positive total model consumption and does not produce an available zero material cost. Aggregate and dependent metric availability follow section 11.3.
 
-Explicit zero for any usage category and zero cost per gram are valid. A zero gram amount contributes 0 for that category; a zero cost per gram makes the entire usage contribute 0.
-
-Negative usage amounts or cost per gram are invalid domain data and must not be silently converted to zero.
+totalConsumptionGrams is derived, not a separate entered field or alternate input mode. Users may choose how much detail to record, but unspecified categories cannot silently become zero or support a partial material-cost result.
 
 Plate material cost is derived business data and must not be persisted as authoritative state.
 
@@ -727,19 +737,24 @@ Cash Contribution is not equivalent to accounting profit.
 
 Printer capacity is a first-class commercial concern because two products with similar margins may consume dramatically different amounts of printer time.
 
-For a Plate:
+For an individual Plate:
 
-Printer hours per finished unit =
-plannedPlatePrintHours / plannedUsableUnits
+Plate printer-hours contribution per finished unit =
+plannedPlatePrintHours / ProductionProfile shared finished-unit batch quantity
 
-Printer hours per sale =
-printerHoursPerFinishedUnit * unitsPerSale
+For the complete ProductionProfile:
+
+ProductionProfile printer hours per finished unit =
+sum of all required Plates' planned print hours / shared finished-unit batch quantity
+
+ProductionProfile printer hours per sale =
+ProductionProfile printer hours per finished unit * unitsPerSale
 
 Printer hours per finished unit is a production metric representing printer capacity required to produce one planned usable finished unit. Printer hours per sale describes capacity for the quantity sold and remains useful for commercial economics, especially when one sale contains multiple units. These are separate derived metrics and must not be conflated.
 
 For manufacturing configurations involving multiple required Plates, the applicable printer-time contribution from the required Plates must be combined. V1 assumes those Plates each support the same planned finished-unit batch quantity; it does not derive a balanced yield from mismatched Plates.
 
-Both metrics use plannedPlatePrintHours and plannedUsableUnits from the manufacturing plan. Per-unit and per-sale calculations must reject zero or negative plannedUsableUnits as invalid domain data, even when planned print hours or unitsPerSale is zero. Negative planned values, including planned print hours and unitsPerSale, are invalid and must not be silently clamped. With positive plannedUsableUnits, zero planned print hours is valid and yields 0 printer hours per finished unit and per sale. Zero unitsPerSale yields 0 printer hours per sale without changing the per-finished-unit metric.
+Both metrics use plannedPlatePrintHours and the ProductionProfile's shared batch quantity. Availability and denominator requirements follow section 11.3. Negative planned values, including planned print hours and unitsPerSale, are invalid and must not be silently clamped. With a positive batch quantity, zero planned print hours is valid and yields 0 printer hours per finished unit and per sale. Zero unitsPerSale yields 0 printer hours per sale without changing the per-finished-unit metric.
 
 Cash Contribution per printer hour is:
 
@@ -868,7 +883,8 @@ ProductVariant represents the actual sellable variation.
 unitsPerSale and Plate yield are separate concepts.
 A ProductionProfile may require multiple Plates.
 All Plates in a V1 ProductionProfile support the same chosen finished-unit batch quantity.
-Plate is a manufacturing plan/template and owns planned print duration, plannedUsableUnits, and planned FilamentUsage.
+ProductionProfile owns the shared finished-unit batch quantity, entered once.
+Plate is a manufacturing plan/template and owns planned print duration and planned FilamentUsage for an arrangement supporting that shared quantity.
 Filament usage is one-to-many and must not use fixed filament slots.
 Manufacturing material belongs to planned production usage in V1 rather than Model.
 Not every printed object requires its own domain entity.

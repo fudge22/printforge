@@ -354,6 +354,8 @@ For V1 economics, this means the chosen manufacturing configuration and its plan
 
 SourceProfile must not substitute for this entity.
 
+ProductionProfile conceptually owns one shared finished-unit batch quantity entered once by the user. Each required Plate must support it. This supersedes the earlier design of repeating planned_usable_units on Plates as the quantity's authoritative source. Final storage naming, representation of an unspecified quantity, reconciliation of any existing Plate values, and any migration strategy remain later implementation decisions. Do not introduce independently mutable profile and Plate quantities as two sources of truth.
+
 15. plates
 
 Represents the chosen planned production arrangement for a build plate used by a ProductionProfile. V1 economics uses planned values rather than actual production results. An initial arrangement may be minimally prepared and later refined after slicer work.
@@ -363,7 +365,6 @@ id
 production_profile_id
 name
 planned_print_hours
-planned_usable_units
 notes
 created_at
 updated_at
@@ -378,14 +379,14 @@ Important rules
 Plate owns:
 
 Planned print duration.
-Planned usable yield.
+An arrangement supporting the ProductionProfile's shared finished-unit batch quantity.
 Planned filament usage.
 
-planned_usable_units corresponds to the number of finished ProductVariant units the chosen Plate arrangement supports, not units_per_sale, physical object count, or theoretical maximum capacity. planned_print_hours supplies the planned Plate print time. A Model does not own Plate yield.
+planned_print_hours supplies the planned Plate print time. The former suggested planned_usable_units Plate field is superseded conceptually by ProductionProfile ownership in section 14; removing it from this suggested list does not prescribe a schema migration. The shared quantity is distinct from units_per_sale, physical object count, and theoretical maximum capacity. A Model does not own production yield.
 
-For V1, Plates under one ProductionProfile share the same planned_usable_units because the user arranges each Plate in the slicer for one chosen finished-unit batch. A batch of 12 Knitted Ghosts may have a Body Plate containing 12 bodies and an Eye Plate containing 24 eyes; both record planned_usable_units = 12. No physical Plate-object quantity relationships, leftover component inventory, or mismatched-yield balancing are needed for this case. This is a conceptual consistency rule; the enforcement mechanism is left to implementation.
+For V1, every required Plate supports the ProductionProfile's shared finished-unit batch quantity. No physical Plate-object quantity relationships, leftover component inventory, or mismatched-yield balancing are needed. The conceptual rule does not settle its storage or enforcement mechanism.
 
-Negative planned values are invalid domain data. Any per-sale calculation requires planned_usable_units greater than zero; zero yield must not produce a fallback per-sale result of 0.
+Negative planned values are invalid domain data. Per-unit and per-sale calculations requiring the shared batch denominator need a specified positive quantity; missing or invalid yield must not produce a fallback result of 0.
 
 Actual production results belong to a future PrintJob or equivalent execution/history concept, not these Plate planning fields. Actual print time, material consumed, usable units, failures, and waste are outside V1; no execution/history tables are required here.
 
@@ -393,9 +394,9 @@ A ProductionProfile may require multiple Plates.
 
 Entered Plate-level inputs must be retained while other required Plates are incomplete, preserving enough context to identify the incomplete or missing Plate and the information still needed. Unknown inputs must remain distinguishable from explicit zero.
 
-ProductionProfile material cost and printer hours per finished unit are derived by summing all required Plates' respective costs and planned print hours and dividing by their shared planned_usable_units. Printer hours measure additive capacity even when Plates print simultaneously; units_per_sale remains separate. These aggregates and their availability are derived from authoritative inputs, not independent mutable state. Product-level estimates must follow the indispensable-data rule in domain-model.md, section 11.3.
+ProductionProfile aggregates and availability are derived per metric from authoritative inputs under domain-model.md, section 11.3. Missing print time must not create a blanket block on material costing or profitability. Do not add stored completeness or readiness statuses for calculation availability.
 
-The exact boundary between indispensable inputs and optional refinements remains unresolved. This decision does not prescribe new columns, nullability, constraints, stored readiness flags, or migrations before that boundary is worked through.
+Changing the shared batch quantity preserves Plate print times and consumption inputs unless the user explicitly clears affected estimates. The warning and confirmation behavior is specified in requirements.md, section 8. Its persistence/lifecycle mechanism remains undecided; no new status field or migration is prescribed here.
 
 16. filaments
 
@@ -416,6 +417,8 @@ updated_at
 The exact unit used for quantity must be explicit and consistent.
 
 If filament cost is calculated from weight, the schema should support deriving a cost per unit weight from purchase quantity and purchase cost.
+
+Filament creation requires valid positive pricing yielding a positive cost per gram, as defined in domain-model.md, section 13. Pricing represents reasonable market or replacement value even for gifts or free samples. The suggested purchase_cost name must not force a zero acquisition price to become the costing value. Exact pricing field semantics and any necessary schema changes remain an implementation decision; this does not introduce purchase-history or inventory modeling.
 
 Important rule
 
@@ -449,9 +452,9 @@ plates
     └── 0..many filament_usages
 Important rule
 
-Filament usage must be modeled as a relational collection. Each usage references a previously configured Filament. Missing usage categories must remain distinguishable from explicit zero; a missing category is omitted from a preliminary estimate, while zero is known consumption. Total consumption and material cost are derived from specified categories and the selected Filament's cost per gram, not authoritative mutable fields. V1 needs no special support-material entity or relationship.
+Filament usage must be modeled as a relational collection. Each usage references a previously configured, positively priced Filament; pricing is not re-entered for each Plate. Missing categories remain distinguishable from explicit zero and prevent that Plate's material-cost calculation under domain-model.md, section 14.1. Total consumption and material cost are derived, not entered totals or authoritative mutable fields. V1 needs no special support-material entity or relationship.
 
-Omitting unspecified categories from Plate-level known-cost calculations does not authorize product-level estimates when a required Plate lacks indispensable production data; see domain-model.md, section 11.3.
+Partial entries may be retained, but material costing requires all four categories for every usage and positive total model consumption across the Plate. Calculation sufficiency does not imply that partial entries must be rejected at persistence time; exact nullability and enforcement remain implementation decisions.
 
 The schema must never introduce fixed columns such as:
 

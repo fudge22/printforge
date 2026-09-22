@@ -502,23 +502,21 @@ Commercial evaluation needs planned production outputs without recreating a slic
 
 Consequences
 
-Known Plate-level inputs remain useful during preliminary evaluation. Product-level economics require sufficient production data on every required Plate, as defined in ADR-017; unspecified refinements may still make available estimates preliminary. Missing usage categories remain distinct from explicit zero, and the UI identifies estimates with incomplete relevant inputs. V1 does not include slicer synchronization, Bambu Studio integration, automatic detection of external changes, printer or fleet management, print-job history, or automatic production optimization.
+An initial slice can support normal profitability calculations when the relevant inputs are sufficient; optimization is not required. ADR-018 supersedes earlier permission to cost only known consumption categories and clarifies availability per metric. Entered information remains useful even when a calculation is unavailable. V1 does not include slicer synchronization, Bambu Studio integration, automatic detection of external changes, printer or fleet management, print-job history, or automatic production optimization.
 
 Future consideration: PrintForge may eventually distinguish production plans optimized for production from plans that are not. A possible progression is Model import, initial slice, preliminary economics, slicer optimization, refined economics, then a production-ready plan. V1 has no required optimization status, no productionOptimizationStatus field, no criteria for being optimized, and no automatic optimization determination. More complicated multi-plate production scenarios also remain a separate future design discussion.
 
 ADR-017: Use One Finished-Unit Batch Quantity Across a ProductionProfile's Plates
 
-Status: Accepted
+Status: Accepted; quantity ownership and calculation availability clarified by ADR-018.
 
 Decision
 
-In V1, every Plate in a ProductionProfile is planned to support the same chosen batch quantity of finished ProductVariant units. plannedUsableUnits records that quantity for each Plate, regardless of how many physical objects the Plate contains. The user arranges those objects in the slicer. PrintForge combines the required Plates' planned costs and printer-time contributions for economics.
+In V1, every Plate in a ProductionProfile is planned to support the same chosen batch quantity of finished ProductVariant units, regardless of how many physical objects the Plate contains. The user arranges those objects in the slicer. PrintForge combines the required Plates' planned costs and printer-time contributions for economics. ADR-018 establishes that the quantity is entered once and owned by ProductionProfile, superseding the earlier repeated Plate-level plannedUsableUnits design.
 
 Sum the material costs and planned print times of all required Plates, then divide each total by the shared batch quantity to derive material cost and printer hours per finished unit. Keep unitsPerSale separate for conversion to per-sale economics. Printer hours are additive manufacturing capacity consumed, not elapsed wall-clock time, including when Plates print simultaneously.
 
-Retain and display entered Plate-level information while other required Plates are incomplete, identifying the incomplete or missing Plate and the specific information needed. While any required Plate lacks indispensable production data, do not present partial ProductionProfile material cost per finished unit, printer hours per finished unit or per sale, Cash Contribution, Cash Contribution Margin, or Cash Contribution per printer hour as product-level estimates. Guide the user to complete the missing information.
-
-Unlock relevant aggregate calculations once all required Plates have sufficient production data, subject to their other required inputs. Preserve the distinction between unspecified refinement inputs and explicit zero; unknown values must not silently become zero. Available estimates may remain preliminary where refinements are unspecified.
+Retain and display valid entered Plate-level information while required inputs are missing. Under ADR-018, sufficient data across all required Plates is evaluated for each particular calculation, not as a blanket gate on product-level economics. Unknown values must not silently become zero.
 
 Rationale
 
@@ -530,4 +528,28 @@ Consequences
 
 V1 does not model Plate object/component quantities, leftover component inventory, mismatched Plate-yield balancing, theoretical maximum Plate capacity, or automatic Plate-capacity optimization. Independently manufactured, separately sellable items remain within the existing ProductVariant and INTERNALLY_MANUFACTURED ProductComponent concepts. Optional bundles of independent products remain a future design discussion.
 
-The precise boundary between indispensable production inputs and optional refinements remains to be worked through. This decision establishes aggregate availability without inventing a comprehensive readiness rule or prescribing validation or schema changes prematurely. Aggregates remain derived from authoritative Plate inputs, consistent with ADR-015.
+ADR-018 resolves the previously open consumption-input and pricing rules and replaces the blanket indispensable-data wording. Aggregates remain derived from authoritative production inputs, consistent with ADR-015; this does not establish a comprehensive readiness rule.
+
+ADR-018: Determine Costing Availability Per Metric and Enter Batch Quantity Once
+
+Status: Accepted
+
+Decision
+
+Calculation availability follows the inputs required by each metric. Missing Plate print time blocks aggregate printer-hours and dependent capacity metrics, not otherwise valid material-cost or profitability calculations. Missing material costs cannot be treated as zero in profitability. The governing dependencies and formulas are in domain-model.md, section 11.3.
+
+ProductionProfile owns the finished-unit batch quantity, entered once, with every required Plate arranged in the slicer to support it. Changing it preserves Plate inputs without automatic scaling or clearing; calculations use the new quantity and a visible review warning. Users can confirm existing values or explicitly clear affected estimates, as specified in requirements.md, section 8.
+
+Material costing requires all four consumption categories on every FilamentUsage and positive total model consumption per Plate. Explicit zero consumption is valid; unknown consumption is not zero. Filament is configured with positive market or replacement pricing before selection for usage, including for gifted or free materials. The complete rules are in domain-model.md, sections 13–14.1.
+
+Use one consolidated actionable missing-input checklist, keeping valid entries and calculations visible. An initial slice can support normal economics without optimization; unknown required inputs are different from a valid plan that may later be improved. Presentation requirements are in requirements.md, section 9.1.
+
+Rationale
+
+A missing time input should not hide a valid cost calculation, while a partial material sum would understate cost. Replacement pricing supports long-term commercial evaluation. Entering the common batch once avoids conflicting yields; preserving slicer outputs avoids assuming linear scaling when the batch changes.
+
+Consequences
+
+This supersedes the earlier known-category preliminary material-cost rule, permission for zero filament cost, repeated Plate-level quantity ownership, and blanket completeness wording in ADR-016/ADR-017. Their slicer ownership, shared-batch aggregation, additive printer-hours, and V1 scope boundaries remain in force. unitsPerSale and independently manufactured ProductComponents remain separate concepts.
+
+No optimization, completeness, or readiness status is introduced. Shared-quantity storage and reconciliation of existing Plate values, pricing field semantics, partial-input persistence, and batch-review confirmation persistence remain implementation decisions described in database-schema.md. This record does not implement or prescribe migrations or settle unrelated readiness questions.
