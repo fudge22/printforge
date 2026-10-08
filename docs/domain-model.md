@@ -375,7 +375,7 @@ Costing and capacity calculations should use the applicable ProductionProfile ra
 
 11.3 V1 Multi-Plate Economics
 
-ProductionProfile owns the chosen finished-unit batch quantity, entered once by the user. Every required Plate must support that same quantity of finished ProductVariant units. This supersedes independent Plate-level plannedUsableUnits ownership; storage implications are described in database-schema.md, sections 14–15. For each calculation with sufficient inputs:
+ProductionProfile is the single authoritative owner of the chosen finished-unit batch quantity, entered and stored once. Every required Plate must support that same quantity of finished ProductVariant units. A newly added Plate uses its parent's quantity without another entry or an independently stored yield. This supersedes independent Plate-level plannedUsableUnits ownership; domain inputs and callers must use the parent quantity when implemented. plannedBatchUnits is a possible name, not a finalized field name; storage implications are described in database-schema.md, sections 14–15. For each calculation with sufficient inputs:
 
 ProductionProfile material cost per finished unit = sum of all required Plates' material costs / shared finished-unit batch quantity.
 
@@ -397,7 +397,11 @@ An initial slice supports normal profitability calculations when the relevant in
 
 11.4 Changing the Shared Batch Quantity
 
-Changing the shared batch quantity preserves Plate print times and filament-consumption inputs without automatic scaling or clearing: slicer outputs need not scale linearly. Calculations continue using the preserved inputs and new quantity, subject to the usual per-metric input requirements. The review warning, confirmation, and optional explicit clearing behavior are specified in requirements.md, section 8; no persistence mechanism or new readiness status is prescribed.
+Changing the shared batch quantity preserves Plate print times and filament-consumption inputs without automatic scaling or clearing: slicer outputs need not scale linearly. Calculations continue using the preserved inputs and current quantity, subject to the usual per-metric input requirements.
+
+Create or update one persistent outstanding batch-change review associated with the ProductionProfile, identifying affected Plates and retaining sufficient context about the previously reviewed arrangement and current quantity. Repeated changes update the unresolved review rather than duplicating it. It remains visible in Outstanding Decisions across application sessions until the user confirms the existing estimates for the current quantity or appropriately updates the affected estimates. Opening or dismissing it does not resolve it. Optional explicit clearing for re-slicing remains available under the consequence-confirmation rules in requirements.md, section 8.3.
+
+An outstanding review records a required user decision; it is distinct from missing calculation inputs and derived Plate readiness. Complete Plates remain print-ready while review is pending. Persistence is required, but specific tables and lifecycle implementation are not prescribed.
 
 12. Plate
 
@@ -450,6 +454,16 @@ The goal is to model meaningful manufacturing concepts rather than reproduce sli
 
 An independently useful manufactured item with its own ProductVariant, production plan, costing, and ability to be sold separately is a different concern. For example, a separately sellable frame used with a HueForge belongs conceptually to the existing INTERNALLY_MANUFACTURED ProductComponent relationship, not to Plate object counting. Optional commercial bundles of independent products remain a future design discussion.
 
+12.4 Derived Plate Print Readiness
+
+A Plate may be saved without usages or complete slicer information and reopened from Still Editing. Saved FilamentUsage records themselves must satisfy section 14.1.
+
+Derive Print Ready from valid saved planned print time (including zero), at least one saved FilamentUsage, all four nonnegative numeric consumption amounts on every usage, positive total model consumption across usages, and a valid positive parent ProductionProfile batch quantity. Otherwise derive Still Editing. Expose this result through the domain/API instead of an independently maintained database status or manual ready action.
+
+The user prepares each Plate's slicer arrangement to support the shared quantity; PrintForge communicates but does not independently verify that physical arrangement. Print readiness means sufficient planned information, not print success, verified slicing, completed production, or profitability. A pending batch-change review alone does not change this result. Calculation availability remains per metric under section 11.3; this does not extend ProductVariant or ProductionProfile readiness rules.
+
+Before saving a change that makes a previously print-ready Plate incomplete or removes previously available dependent calculations, require consequence confirmation as specified in requirements.md, section 8.3. Cancellation preserves saved information; confirmation saves the change and re-derives economics and readiness. Ordinary descriptive edits and changes between valid production values do not require additional confirmation merely because their economic results differ.
+
 13. Filament
 
 A Filament represents a material that may be consumed during printing.
@@ -459,15 +473,17 @@ Relevant information may include:
 Material type.
 Brand.
 Color.
-Purchase quantity.
-Purchase cost.
+Positive reference quantity with an explicit weight unit.
+Positive estimated normal market or replacement price for that quantity.
 Other information needed to derive material cost.
 
 Filament represents the reusable material definition.
 
 Planned consumption belongs to FilamentUsage in V1.
 
-A Filament is configured before selection for Plate usage, with valid positive pricing information at creation and a positive derived costPerGram representing reasonable market or replacement value. Zero pricing is invalid, including for gifts or free samples: commercial viability must account for eventual replacement. Pricing is reused through the selected Filament, not re-entered for each Plate. A properly configured selected Filament has an associated cost; V1 does not introduce a routine unpriced-Filament usage workflow.
+A Filament is configured before selection for Plate usage with a positive market price and corresponding positive reference quantity, for example $20 for 1,000 grams. costPerGram is derived as market price / reference quantity in grams. This is estimated normal market or replacement value, not necessarily the amount paid for a spool. Zero pricing is invalid, including for gifted, discounted, or free filament: commercial viability must account for eventual replacement. Pricing is configured once on the reusable Filament and reused through selection, not re-entered for each Plate. A properly configured selected Filament has an associated cost; V1 does not introduce a routine unpriced-Filament usage workflow.
+
+Changes to a Filament's market price flow through all dependent Plate costs and ProductionProfile economics using current authoritative inputs. V1 does not preserve earlier prices through historical costing snapshots. Actual purchase price, purchase history, and inventory valuation remain outside V1.
 
 13.1 Future Filament Modeling
 
@@ -518,7 +534,7 @@ Tower grams (towerGrams).
 
 Support grams are simply the support usage reported for that filament. V1 requires no dedicated support-material entity or configuration. Each usage obtains costPerGram from its selected Filament; the richer spool/inventory model remains deferred.
 
-For a Plate material-cost calculation, all four amounts must be specified for every FilamentUsage. Blank or unspecified means unknown and makes that Plate's material cost unavailable; explicit zero is valid. Entered information may be retained without an available material-cost calculation. This supersedes calculating costs from only whichever categories are known.
+Every saved FilamentUsage must specify valid nonnegative numeric values for all four amounts. Explicit zero is valid; blank, null, and unspecified values are invalid for saving. Temporary blanks belong only to an unsaved editing form. This supersedes permission to persist partial usages as well as costing only known categories. A Plate may still be saved without any usages or other required slicer information; that does not relax usage validation.
 
 Total modelGrams across the Plate's usages must be positive. An individual usage may have zero modelGrams when its filament is used only for support or another non-model purpose. Support, purge, and tower amounts need not be positive. Negative consumption amounts are invalid and must not be silently converted to zero.
 
@@ -530,7 +546,7 @@ Plate material cost = sum(totalConsumptionGrams * costPerGram) across its usages
 
 The formulas apply only when the consumption requirements and positive Filament pricing in section 13 are satisfied. An empty usage collection cannot satisfy positive total model consumption and does not produce an available zero material cost. Aggregate and dependent metric availability follow section 11.3.
 
-totalConsumptionGrams is derived, not a separate entered field or alternate input mode. Users may choose how much detail to record, but unspecified categories cannot silently become zero or support a partial material-cost result.
+totalConsumptionGrams is derived, not a separate entered field or alternate input mode. All four categories must be explicitly supplied when saving; unspecified categories cannot silently become zero or support a partial material-cost result.
 
 Plate material cost is derived business data and must not be persisted as authoritative state.
 

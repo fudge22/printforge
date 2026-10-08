@@ -202,9 +202,39 @@ A Plate is the planned production arrangement the user has chosen to evaluate or
 
 In V1, the user enters the shared finished-unit batch quantity once at the ProductionProfile level. The UI must explicitly instruct the user to prepare every required Plate in the slicer to support that quantity. For 12 Knitted Ghosts, the Body Plate and Eyes Plate must each support 12 finished Ghosts; their arrangements may contain 12 bodies and 24 eyes. PrintForge does not need Plate object quantities, per-unit physical component counts, leftover component inventory, mismatched-yield balancing, theoretical capacity, or automatic Plate-capacity optimization for this case.
 
-Changing the batch quantity preserves existing Plate print times and filament-consumption inputs without automatically scaling or clearing them, because slicer outputs do not necessarily scale linearly. Calculations continue using those inputs with the new quantity, subject to each metric's input requirements. Show a visible warning in the batch-editing context that Plate arrangements and estimates may need review. The user can confirm that existing Plate values still apply, dismissing the warning without re-entering them. Offer an optional, explicit action to clear affected Plate estimates for re-slicing; editing the batch quantity must never clear them automatically. This behavior does not introduce a new readiness status or prescribe how review confirmation is persisted.
+Store the shared quantity once on ProductionProfile, not independently on each Plate. A newly added Plate automatically uses its parent's quantity without asking the user to enter it again; it retains its own print time and FilamentUsage.
 
 The slicer remains authoritative for detailed slicer configuration. The user manages printer profiles, nozzle size, layer height, infill, wall count, supports, and other slicing settings there. PrintForge records commercially relevant planned outputs of the slice; production notes may still record details the user wants to remember. V1 does not duplicate or synchronize slicer settings.
+
+8.1 Batch Changes and Outstanding Decisions
+
+Changing the batch quantity preserves existing Plate print times and filament-consumption inputs without automatically scaling or clearing them, because slicer outputs do not necessarily scale linearly. Calculations continue using those inputs with the current quantity, subject to each metric's input requirements.
+
+Create or update a persistent outstanding review associated with the affected ProductionProfile. It identifies the affected Plates and explains that their slicer arrangements and estimates may no longer apply. Keep it visible in a dedicated "Outstanding Decisions" area until resolved, including after closing and reopening PrintForge. Repeated changes update the same unresolved review: changing 12 to 15 and then to 20 leaves one review for the current quantity of 20, retaining sufficient context about the previously reviewed arrangement.
+
+Resolve the review when the user confirms that existing Plate estimates still apply to the current batch quantity or appropriately updates the affected estimates. Merely opening or dismissing the review is not confirmation. Offer an optional, explicit action to clear affected estimates for re-slicing; clearing never happens automatically and follows section 8.3 when it removes required information.
+
+An outstanding review is a request for user attention, not a calculation-completeness status. Complete Plates may remain Print Ready while review is pending. Outstanding Decisions is distinct from both Still Editing and the consolidated missing-input checklist in section 9.1.
+
+8.2 Saving Plates and Derived Print Readiness
+
+A Plate may be created and saved without FilamentUsage or complete slicer-derived information. It appears in the website's "Still Editing" area and can be reopened later. Derive "Print Ready" automatically from authoritative saved information when all of the following hold:
+
+- Valid planned Plate print time (zero is valid under section 7.2).
+- At least one saved FilamentUsage.
+- All four nonnegative consumption amounts on every usage.
+- Positive total model consumption across the Plate's usages.
+- A valid, positive shared batch quantity on the parent ProductionProfile.
+
+A print-ready Plate must represent an arrangement prepared in the slicer to support that shared quantity. PrintForge communicates this expectation but does not independently verify physical object counts or arrangements. Print Ready means sufficient planned production information, not guaranteed print success, verified slicing, completed manufacturing, or commercial profitability.
+
+Expose derived Plate readiness through the domain/API; do not require a manual mark-as-ready action or maintain an independent database status. If confirmed changes leave required information insufficient, derive Still Editing automatically. Pending batch review alone does not make a Plate Still Editing. These rules do not introduce a broader ProductVariant or ProductionProfile readiness system or replace per-metric calculation availability.
+
+8.3 Confirmation Before Losing Required Information
+
+Before applying a proposed change that would make a previously print-ready Plate incomplete or make previously available dependent calculations unavailable, identify the affected Plate, ProductionProfile, and calculations where possible. Show a confirmation explaining the consequences and allow cancellation without changing saved information. On confirmation, save the change, recalculate affected economics, and derive updated readiness.
+
+For example, removing the Eyes Plate's FilamentUsage may make it incomplete and remove material-cost-dependent profitability metrics while leaving printer-hours calculations available. Ordinary descriptive edits and changes between valid production values do not require this additional confirmation merely because an economic value changes.
 
 9. Filament and Material Usage
 
@@ -224,15 +254,15 @@ Material information belongs to planned production usage in V1 rather than to th
 
 For each Plate usage, the user selects a previously configured Filament and enters the slicer-reported modelGrams, supportGrams, purgeGrams, and towerGrams separately. Support usage is the supportGrams reported for that filament; V1 has no separate support-material configuration. These categories are not manually combined into a single entered total.
 
-Material costing requires all four consumption amounts for every FilamentUsage on the Plate and positive total model consumption across its usages. Explicit zero is valid; blank means unknown and prevents that Plate's material-cost calculation. Individual filaments may have zero model consumption, and support, purge, and tower consumption need not be positive. Users may retain partial entries, but there is no separate total-consumption field or alternate input mode. The canonical formula and input rules are in domain-model.md, section 14.1.
+Every saved FilamentUsage requires valid nonnegative numeric values for modelGrams, supportGrams, purgeGrams, and towerGrams. Explicit zero is valid; blank, null, or unspecified values cannot be saved. Fields may temporarily remain blank in an unsaved form. This supersedes permission to persist partial usages; saving an unfinished Plate without usages remains allowed. Material costing and Plate print readiness require positive total model consumption across the Plate's usages. Individual usages may have zero model consumption, and support, purge, and tower amounts need not be positive. There is no separate total-consumption field or alternate input mode. The canonical formula and input rules are in domain-model.md, section 14.1.
 
-Filament must be configured with valid positive pricing before selection for Plate usage; users do not re-enter pricing per Plate. Its cost per gram must reflect reasonable market or replacement value. Filament creation must guide users to that value instead of accepting $0, including for gifts and free samples, and explain that PrintForge evaluates long-term commercial viability because free materials eventually need replacement.
+Filament must be configured once with a positive normal market or replacement price and a positive reference quantity, such as $20 for 1,000 grams, before selection for Plate usage. PrintForge derives cost per gram; users do not re-enter pricing per Plate. Gifted, discounted, or free filament still requires a reasonable positive market value; zero pricing is invalid. Actual purchase price, purchase history, and inventory valuation are outside V1. Changing the reusable Filament's market price updates all dependent Plate costs and ProductionProfile economics from current inputs; V1 does not retain historical costing snapshots to preserve an earlier price.
 
 9.1 Calculation Availability and Missing Inputs
 
 Availability follows each metric's required inputs, not a blanket ProductionProfile completeness gate. Missing print time on a required Plate blocks aggregate printer hours, printer hours per finished unit or sale, and Cash Contribution per printer hour. It does not by itself block material cost, Cash Contribution, or Cash Contribution Margin when their own inputs are sufficient. Missing material-cost information prevents dependent cost and profitability results; it must not be treated as zero. The governing calculation rules are in domain-model.md, section 11.3.
 
-Retain and display valid entered Plate-level information and all available calculations. Use one consolidated, actionable missing-input checklist identifying the specific Plate or other relevant location, the input needing attention, and, where practical, which calculations completing it will enable. Unavailable metrics may display a neutral "Not available" or dash; do not repeat warnings beside each affected metric. The batch-change review warning belongs in the relevant editing context because it requests a separate user action.
+Retain and display valid entered Plate-level information and all available calculations. Use one consolidated, actionable missing-input checklist identifying the specific Plate or other relevant location, the input needing attention, and, where practical, which calculations completing it will enable. Unavailable metrics may display a neutral "Not available" or dash; do not repeat warnings beside each affected metric. Batch-change reviews remain visible in Outstanding Decisions under section 8.1 and may also be shown in the relevant editing context. Missing required inputs and unresolved reviews are distinct concerns.
 
 A valid initial slice can support normal profitability calculations. Optimization is not required, and V1 has no optimization status or automatic optimization criteria. Later slicer improvements may change print time, purge, tower consumption, and other costs; economics recalculate from the updated planned inputs. Distinguish a valid initial estimate from an unavailable calculation whose required inputs are unknown. These rules do not introduce stored completeness/readiness statuses or a comprehensive new readiness rule.
 
@@ -671,7 +701,7 @@ Users should be able to import a Model and return to it later without supplying 
 
 As information is added, PrintForge should progressively provide more useful economics and readiness information.
 
-A minimally prepared slice can support normal economics when each metric's required inputs are sufficient. Partial consumption entries remain entered information, not an available material-cost estimate. Use the per-metric availability and consolidated checklist behavior in section 9.1, rather than requiring optimization or treating unspecified categories as zero.
+A minimally prepared slice can support normal economics when each metric's required inputs are sufficient. Partial consumption entries may exist only in an unsaved form, not as saved FilamentUsage or an available material-cost estimate. Use the per-metric availability and consolidated checklist behavior in section 9.1, rather than requiring optimization or treating unspecified categories as zero.
 
 Missing information should be communicated to the user rather than replaced with misleading calculated defaults.
 

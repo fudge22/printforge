@@ -354,7 +354,7 @@ For V1 economics, this means the chosen manufacturing configuration and its plan
 
 SourceProfile must not substitute for this entity.
 
-ProductionProfile conceptually owns one shared finished-unit batch quantity entered once by the user. Each required Plate must support it. This supersedes the earlier design of repeating planned_usable_units on Plates as the quantity's authoritative source. Final storage naming, representation of an unspecified quantity, reconciliation of any existing Plate values, and any migration strategy remain later implementation decisions. Do not introduce independently mutable profile and Plate quantities as two sources of truth.
+Persist one shared finished-unit batch quantity on ProductionProfile, entered once by the user. Each required Plate uses this parent quantity, including newly added Plates without another entry. This supersedes repeating planned_usable_units on Plates: implement the quantity on production_profiles, not as independently mutable Plate values. plannedBatchUnits (or planned_batch_units in schema naming) is a suggestion, not a finalized name. Final naming and representation of an unspecified profile quantity remain implementation details; ownership and single storage are settled. This design does not prescribe a migration or data-reconciliation strategy.
 
 15. plates
 
@@ -382,9 +382,9 @@ Planned print duration.
 An arrangement supporting the ProductionProfile's shared finished-unit batch quantity.
 Planned filament usage.
 
-planned_print_hours supplies the planned Plate print time. The former suggested planned_usable_units Plate field is superseded conceptually by ProductionProfile ownership in section 14; removing it from this suggested list does not prescribe a schema migration. The shared quantity is distinct from units_per_sale, physical object count, and theoretical maximum capacity. A Model does not own production yield.
+planned_print_hours supplies the planned Plate print time. The former suggested planned_usable_units Plate field must be replaced by the parent ProductionProfile quantity in the implemented model and schema under section 14; this does not prescribe a schema migration. Plates retain their own print times and relational FilamentUsage records. The shared quantity is distinct from units_per_sale, physical object count, and theoretical maximum capacity. A Model does not own production yield.
 
-For V1, every required Plate supports the ProductionProfile's shared finished-unit batch quantity. No physical Plate-object quantity relationships, leftover component inventory, or mismatched-yield balancing are needed. The conceptual rule does not settle its storage or enforcement mechanism.
+For V1, every required Plate is expected to support the ProductionProfile's shared finished-unit batch quantity. PrintForge communicates this slicer-arrangement expectation without independently verifying object counts. No physical Plate-object quantity relationships, leftover component inventory, or mismatched-yield balancing are needed.
 
 Negative planned values are invalid domain data. Per-unit and per-sale calculations requiring the shared batch denominator need a specified positive quantity; missing or invalid yield must not produce a fallback result of 0.
 
@@ -396,7 +396,9 @@ Entered Plate-level inputs must be retained while other required Plates are inco
 
 ProductionProfile aggregates and availability are derived per metric from authoritative inputs under domain-model.md, section 11.3. Missing print time must not create a blanket block on material costing or profitability. Do not add stored completeness or readiness statuses for calculation availability.
 
-Changing the shared batch quantity preserves Plate print times and consumption inputs unless the user explicitly clears affected estimates. The warning and confirmation behavior is specified in requirements.md, section 8. Its persistence/lifecycle mechanism remains undecided; no new status field or migration is prescribed here.
+A Plate may be persisted without usages or complete slicer-derived inputs. Derive its Still Editing or Print Ready result from authoritative saved inputs under domain-model.md, section 12.4; do not add a separately maintained Plate readiness column. Saving a FilamentUsage has stricter input requirements under section 17.
+
+Changing the shared batch quantity preserves Plate print times and consumption inputs without automatic scaling or clearing. The outstanding review must persist under section 23, independently of derived Plate readiness. Explicit clearing and other changes that remove required information follow requirements.md, section 8.3; no confirmation API or transaction architecture is prescribed here.
 
 16. filaments
 
@@ -408,17 +410,19 @@ name
 material_type
 brand
 color
-purchase_quantity
-purchase_cost
+reference_quantity
+market_price
 notes
 created_at
 updated_at
 
 The exact unit used for quantity must be explicit and consistent.
 
-If filament cost is calculated from weight, the schema should support deriving a cost per unit weight from purchase quantity and purchase cost.
+The reference quantity and market price above are suggested names replacing the earlier purchase_quantity and purchase_cost terminology. Persist a positive normal market or replacement price and its corresponding positive reference quantity with an explicit weight unit; derive cost per gram from these inputs (for example, $20 / 1,000 grams).
 
-Filament creation requires valid positive pricing yielding a positive cost per gram, as defined in domain-model.md, section 13. Pricing represents reasonable market or replacement value even for gifts or free samples. The suggested purchase_cost name must not force a zero acquisition price to become the costing value. Exact pricing field semantics and any necessary schema changes remain an implementation decision; this does not introduce purchase-history or inventory modeling.
+Filament creation requires valid positive pricing yielding a positive cost per gram, as defined in domain-model.md, section 13, even for gifted, discounted, or free material. Zero price is invalid. The market-value semantics are settled; final field naming remains an implementation detail. The former purchase_cost suggestion must not be interpreted as actual acquisition cost. Actual purchase price, purchase history, and inventory valuation are outside V1; do not add tables for them.
+
+Pricing is stored once on the reusable Filament, not per usage or Plate. All dependent Plate costs and ProductionProfile economics derive from its current price. V1 does not retain historical costing snapshots merely to preserve a previous price.
 
 Important rule
 
@@ -439,7 +443,7 @@ filament_id
 created_at
 updated_at
 
-Usage inputs must preserve separately entered modelGrams, supportGrams, purgeGrams, and towerGrams when known. Their exact column names and nullability remain undecided.
+Persist separately entered modelGrams, supportGrams, purgeGrams, and towerGrams as required non-null, nonnegative numeric values for every saved usage. Exact column names remain implementation details; nullability and complete-input persistence are settled. Explicit zero is valid; blank, null, or unspecified categories must not be saved or silently defaulted to zero.
 
 Foreign keys
 filament_usages.plate_id
@@ -452,9 +456,9 @@ plates
     └── 0..many filament_usages
 Important rule
 
-Filament usage must be modeled as a relational collection. Each usage references a previously configured, positively priced Filament; pricing is not re-entered for each Plate. Missing categories remain distinguishable from explicit zero and prevent that Plate's material-cost calculation under domain-model.md, section 14.1. Total consumption and material cost are derived, not entered totals or authoritative mutable fields. V1 needs no special support-material entity or relationship.
+Filament usage must be modeled as a relational collection. Each usage references a previously configured, positively priced Filament; pricing is not re-entered for each Plate. All four consumption categories are required for saving under domain-model.md, section 14.1. Total consumption and material cost are derived, not entered totals or authoritative mutable fields. V1 needs no special support-material entity or relationship.
 
-Partial entries may be retained, but material costing requires all four categories for every usage and positive total model consumption across the Plate. Calculation sufficiency does not imply that partial entries must be rejected at persistence time; exact nullability and enforcement remain implementation decisions.
+Partial consumption may exist only in an unsaved form, superseding the earlier permission to persist partial usages. An unfinished Plate can be saved without usages. A saved usage may have zero model consumption, but the Plate requires positive total model consumption across usages for material costing and print readiness. Saving valid usages and having a print-ready Plate are distinct requirements.
 
 The schema must never introduce fixed columns such as:
 
@@ -632,7 +636,7 @@ They should be calculated from authoritative underlying records.
 
 For example:
 
-Filament purchase information
+Filament market price and reference quantity
         +
 FilamentUsage
         ↓
@@ -663,6 +667,10 @@ Review dates.
 Market Observations.
 
 These values cannot be recreated solely from manufacturing data.
+
+Batch-quantity changes also require a persistent outstanding review associated with the affected ProductionProfile. Preserve the affected Plates, current batch quantity, and sufficient context about the previously reviewed arrangement. Update the same unresolved review on repeated quantity changes rather than creating duplicates. Keep it available across sessions in Outstanding Decisions until the user confirms that existing estimates apply to the current quantity or appropriately updates affected estimates. Opening or dismissing a review does not resolve it.
+
+This review records a user decision that cannot be derived from complete production inputs. It is separate from Plate readiness and the missing-input checklist; pending review alone does not make a Plate incomplete or block calculations. Persistence and the conceptual lifecycle are required, while specific tables, column names, and resolution representation remain implementation details. No generic workflow infrastructure or event system is required by this design.
 
 24. Product Readiness Persistence
 
@@ -708,7 +716,7 @@ Examples include:
 Planned selling price.
 Packaging cost.
 Purchased component cost.
-Filament purchase cost.
+Filament market or replacement price.
 Consumable cost.
 Market asking price.
 

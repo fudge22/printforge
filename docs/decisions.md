@@ -494,7 +494,7 @@ Status: Accepted
 
 Decision
 
-The slicer is authoritative for printer profiles, nozzle size, layer height, infill, wall count, support configuration, and other detailed slicing settings. The user manages those settings there. PrintForge V1 records the chosen Plate's commercially relevant planned print time, usable finished-unit output, and per-filament consumption; production notes may retain details the user wants to remember. V1 does not duplicate or synchronize detailed slicer configuration.
+The slicer is authoritative for printer profiles, nozzle size, layer height, infill, wall count, support configuration, and other detailed slicing settings. The user manages those settings there. PrintForge V1 records the chosen Plate's commercially relevant planned print time and per-filament consumption, with shared finished-unit output owned by ProductionProfile under ADR-018/ADR-019; production notes may retain details the user wants to remember. V1 does not duplicate or synchronize detailed slicer configuration.
 
 Rationale
 
@@ -532,7 +532,7 @@ ADR-018 resolves the previously open consumption-input and pricing rules and rep
 
 ADR-018: Determine Costing Availability Per Metric and Enter Batch Quantity Once
 
-Status: Accepted
+Status: Accepted; persistence, pricing semantics, Plate readiness, and batch-review lifecycle refined by ADR-019.
 
 Decision
 
@@ -552,4 +552,34 @@ Consequences
 
 This supersedes the earlier known-category preliminary material-cost rule, permission for zero filament cost, repeated Plate-level quantity ownership, and blanket completeness wording in ADR-016/ADR-017. Their slicer ownership, shared-batch aggregation, additive printer-hours, and V1 scope boundaries remain in force. unitsPerSale and independently manufactured ProductComponents remain separate concepts.
 
-No optimization, completeness, or readiness status is introduced. Shared-quantity storage and reconciliation of existing Plate values, pricing field semantics, partial-input persistence, and batch-review confirmation persistence remain implementation decisions described in database-schema.md. This record does not implement or prescribe migrations or settle unrelated readiness questions.
+This decision originally left shared-quantity storage, pricing field semantics, partial-input persistence, and batch-review persistence open, without introducing readiness status. ADR-019 now governs those areas and adds derived Plate print readiness. No optimization status, migration strategy, or broader readiness system is established.
+
+ADR-019: Settle Production Input Persistence, Plate Readiness, and Outstanding Reviews
+
+Status: Accepted
+
+Decision
+
+Store the shared finished-unit batch quantity once on ProductionProfile. Every required Plate uses that quantity, including new Plates without repeated entry, and retains its own print time and FilamentUsage. The former Plate-level plannedUsableUnits design must be replaced in domain inputs/callers and schema implementation. plannedBatchUnits is a possible name, not a finalized contract.
+
+Configure Filament once with a positive normal market or replacement price and corresponding positive reference quantity; derive cost per gram. This is not actual spool acquisition cost. Gifted, discounted, or free filament still requires a positive market value. Current price changes flow through dependent Plate costs and ProductionProfile economics without historical costing snapshots. Actual purchase price, purchase history, and inventory valuation are outside V1; the earlier purchase_cost terminology must reflect these settled semantics or be renamed.
+
+Every saved FilamentUsage requires valid nonnegative numeric modelGrams, supportGrams, purgeGrams, and towerGrams. Explicit zero is valid; blank, null, or unspecified values belong only to unsaved forms. An unfinished Plate may be saved without usages or complete slicer information. Material costing and Plate print readiness require positive total model consumption across the Plate, even though an individual usage may have zero model consumption.
+
+Derive Plate Print Ready from valid planned print time (including zero), at least one saved usage with all four nonnegative amounts, positive total model consumption, and a valid positive parent batch quantity; otherwise derive Still Editing. Expose the result through the domain/API, without a manual ready action or independent database status. The slicer arrangement must support the shared quantity, but PrintForge does not independently verify it. Readiness here means sufficient planned information, not guaranteed success, completed manufacturing, or profitability.
+
+Before saving a change that makes a previously print-ready Plate incomplete or removes available dependent calculations, identify consequences where possible and allow confirmation or cancellation. Confirmation saves and re-derives economics/readiness; cancellation preserves saved information. Descriptive edits and changes between valid production values do not require this additional confirmation merely because results change.
+
+Batch changes preserve estimates without automatic scaling or clearing and continue available calculations using the current quantity. Create or update one persistent outstanding review for the affected ProductionProfile, identifying affected Plates and retaining context about the previously reviewed arrangement. Repeated changes update the unresolved review for the current quantity. Keep it visible across sessions in Outstanding Decisions until estimates are confirmed for that quantity or appropriately updated. Opening or dismissing it is not confirmation. Explicit clearing for re-slicing remains optional and follows the consequence-confirmation rule.
+
+Outstanding Decisions is distinct from Still Editing, Print Ready, and the missing-input checklist. Pending review alone does not make a complete Plate incomplete or block calculations. requirements.md, section 8, and domain-model.md, sections 11–14, govern the detailed behavior.
+
+Rationale
+
+Complete saved usages prevent unknown consumption from becoming zero cost while allowing unfinished Plates to be retained. Derived readiness avoids competing sources of truth. Persistent reviews preserve the user's need to reassess slicer arrangements without discarding valid inputs or pretending that complete inputs prove the arrangement still applies.
+
+Consequences
+
+This refines ADR-018 and supersedes permission to persist partial FilamentUsage records, uncertainty about profile-level quantity storage and market-value semantics, and a merely dismissible batch-edit warning with undecided persistence. Historical ADR-016/ADR-017 context remains; per-metric availability, additive printer-hours, all-required-Plate aggregation, separate unitsPerSale and internally manufactured ProductComponents, and slicer ownership remain unchanged. An initial valid slice supports normal economics without optimization. Unknown costs never become zero, and Cash Contribution and Margin do not inherently require print time.
+
+Domain calculations remain authoritative outside React. Final field names, representation of an unspecified profile quantity, and concrete review storage/resolution design remain implementation details. No migrations, data-migration strategy, generic workflow infrastructure, or broader ProductVariant/ProductionProfile readiness system are prescribed.
